@@ -96,6 +96,12 @@ recarregar a config. Para o bell aparecer no Windows Terminal, ajuste o
 - A imagem de fundo (`background_image`) aponta para `~/.config/kitty/3.png`, que
   o `install.sh` symlinka a partir de `config/kitty/3.png` no repo. Para trocar a
   imagem, substitua esse arquivo no repo.
+- **`background_image` precisa estar dentro dos arquivos de tema também.**
+  O `kitty.conf` faz `include current-theme.conf` (e `dark-theme.auto.conf`),
+  e o kitty sobrescreve `background_image` quando o tema define `background`
+  (regra do `auto_color_scheme`). Por isso as duas linhas
+  (`background_image` + `background_image_layout scaled`) estão duplicadas
+  dentro de cada tema. Ao adicionar um tema novo, copie-as para lá também.
 
 ## Portabilidade
 
