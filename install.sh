@@ -61,7 +61,7 @@ step_pkgs() {
     log "Instalando pacotes de sistema (apt)…"
     sudo apt-get update -y
     sudo apt-get install -y \
-      zsh tmux kitty eza openfortivpn \
+      zsh tmux kitty eza openfortivpn lazygit \
       git curl wget unzip jq \
       wl-clipboard xclip libnotify-bin \
       fd-find fontconfig build-essential procps file
@@ -69,7 +69,7 @@ step_pkgs() {
     log "Instalando pacotes de sistema (pacman)…"
     # -Syu evita partial upgrade (recomendação do Arch); --needed pula o que já existe
     sudo pacman -Syu --needed --noconfirm \
-      zsh tmux kitty eza openfortivpn \
+      zsh tmux kitty eza openfortivpn lazygit \
       git curl wget unzip jq \
       wl-clipboard xclip libnotify \
       fd fontconfig base-devel procps-ng file
