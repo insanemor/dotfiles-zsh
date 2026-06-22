@@ -63,7 +63,7 @@ step_pkgs() {
     sudo apt-get install -y \
       zsh tmux kitty eza openfortivpn \
       git curl wget unzip jq \
-      wl-clipboard xclip \
+      wl-clipboard xclip libnotify-bin \
       fd-find fontconfig build-essential procps file
   elif have pacman; then
     log "Instalando pacotes de sistema (pacman)…"
@@ -71,7 +71,7 @@ step_pkgs() {
     sudo pacman -Syu --needed --noconfirm \
       zsh tmux kitty eza openfortivpn \
       git curl wget unzip jq \
-      wl-clipboard xclip \
+      wl-clipboard xclip libnotify \
       fd fontconfig base-devel procps-ng file
   else
     warn "nenhum gerenciador suportado (apt/pacman) encontrado; instale os pacotes à mão e rode: ./install.sh tools"
@@ -242,6 +242,35 @@ step_link() {
   link "$DOTFILES_DIR/config/kitty/kitty.conf"           "$HOME/.config/kitty/kitty.conf"
   link "$DOTFILES_DIR/config/kitty/current-theme.conf"   "$HOME/.config/kitty/current-theme.conf"
   link "$DOTFILES_DIR/config/kitty/dark-theme.auto.conf" "$HOME/.config/kitty/dark-theme.auto.conf"
+  # ~/.claude/ (hook de notificação)
+  link "$DOTFILES_DIR/claude/hooks/claude-notify.sh"     "$HOME/.claude/hooks/claude-notify.sh"
+}
+
+# =====================================================================
+#  11) Hooks de notificação do Claude Code (merge idempotente)
+#      Garante os hooks Stop/Notification no ~/.claude/settings.json
+#      sem destruir o restante das configs pessoais.
+# =====================================================================
+step_claude_hooks() {
+  have jq || { warn "jq ausente, pulando hooks do Claude"; return; }
+  local s="$HOME/.claude/settings.json" tmp
+  mkdir -p "$HOME/.claude/hooks"
+  [ -f "$s" ] || echo '{}' > "$s"
+  tmp="$(mktemp)"
+  if jq --arg stop '$HOME/.claude/hooks/claude-notify.sh stop' \
+        --arg notif '$HOME/.claude/hooks/claude-notify.sh notification' '
+        def ensure($event; $cmd):
+          .hooks[$event] = ((.hooks[$event] // []) as $arr
+            | if ($arr | tostring | contains("claude-notify.sh"))
+              then $arr
+              else $arr + [{hooks:[{type:"command", command:$cmd, timeout:5}]}]
+              end);
+        ensure("Stop"; $stop) | ensure("Notification"; $notif)
+      ' "$s" > "$tmp" 2>/dev/null; then
+    mv "$tmp" "$s"; ok "hooks de notificação garantidos em ~/.claude/settings.json"
+  else
+    rm -f "$tmp"; warn "não consegui atualizar os hooks do Claude (settings.json malformado?)"
+  fi
 }
 
 # =====================================================================
@@ -249,7 +278,7 @@ step_link() {
 # =====================================================================
 main() {
   case "${1:-all}" in
-    link)  step_link ;;
+    link)  step_link; step_claude_hooks ;;
     tools) step_omz; step_fzf; step_atuin; step_brew; step_asdf; step_extras; step_font; step_tmux ;;
     all)
       step_pkgs
@@ -262,6 +291,7 @@ main() {
       step_font
       step_tmux
       step_link
+      step_claude_hooks
       ;;
     *) echo "uso: $0 [all|link|tools]"; exit 1 ;;
   esac
@@ -271,6 +301,7 @@ main() {
   echo "Notas:"
   echo "  • Dentro do tmux, finalize os plugins com: prefixo (Ctrl-a) + I"
   echo "  • O kitty.conf referencia uma imagem de fundo (~/Pictures/3.png) — ajuste se faltar."
+  echo "  • Notificações do Claude: rode /hooks no Claude Code (ou reinicie) p/ recarregar."
   echo "  • 1Password (agente SSH em ~/.1password/agent.sock) deve ser instalado à parte."
 }
 

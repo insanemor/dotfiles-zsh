@@ -23,6 +23,9 @@ o ambiente do zero. Suporta **Ubuntu/Debian** (apt) e **Arch** (pacman) — o
 │       ├── kitty.conf
 │       ├── current-theme.conf
 │       └── dark-theme.auto.conf
+├── claude/
+│   └── hooks/
+│       └── claude-notify.sh   # notificação (desktop + bell) -> ~/.claude/hooks/
 └── bin/
     └── _awspp                 # cópia de referência do helper do awsp
 ```
@@ -38,9 +41,9 @@ cd ~/dotfiles
 Outros modos:
 
 ```bash
-./install.sh link       # só recria os symlinks dos dotfiles
-./install.sh tools      # só ferramentas (não mexe no apt)
-SKIP_APT=1 ./install.sh # pula a etapa de apt
+./install.sh link        # só recria os symlinks + hooks do Claude
+./install.sh tools       # só ferramentas (não mexe nos pacotes do SO)
+SKIP_PKGS=1 ./install.sh # pula a etapa de pacotes do SO
 ```
 
 O script é **idempotente** (pode rodar de novo) e faz **backup** de qualquer
@@ -50,13 +53,32 @@ arquivo existente em `~/.dotfiles-backup/<timestamp>/` antes de criar os symlink
 
 | Categoria        | Itens |
 |------------------|-------|
-| Pacotes do SO    | zsh, tmux, kitty, eza, openfortivpn, git, curl, jq, wl-clipboard, xclip, fd, fontconfig, build-essential (via apt no Debian/Ubuntu ou pacman no Arch — nomes ajustados por distro) |
+| Pacotes do SO    | zsh, tmux, kitty, eza, openfortivpn, git, curl, jq, wl-clipboard, xclip, libnotify, fd, fontconfig, build-essential (via apt no Debian/Ubuntu ou pacman no Arch — nomes ajustados por distro) |
 | Shell            | Oh My Zsh, Powerlevel10k, zsh-autosuggestions, zsh-syntax-highlighting |
 | Ferramentas      | fzf, atuin, opencode, awsp |
 | Homebrew         | asdf, fd, lazygit, neovim, charmbracelet/tap/crush |
 | asdf (.tool-versions) | awscli, bun, gcloud, helm, k3d, k9s, kubectl, kubectx, nodejs, terraform, terragrunt, tf-summarize, velero |
 | tmux             | TPM + tmux-sensible, tmux-yank, tmux-resurrect, tmux-continuum |
+| Claude Code      | hooks de notificação (Stop/Notification) → notify-send + bell no tmux |
 | Fonte            | FiraCode Nerd Font |
+
+## Notificações do Claude Code
+
+`claude/hooks/claude-notify.sh` dispara em dois eventos do Claude Code:
+
+- **Stop** — quando o Claude termina de responder.
+- **Notification** — quando o Claude está aguardando você (permissão/input).
+
+Em cada evento faz duas coisas:
+1. `notify-send` — notificação no desktop Linux (quando você está na máquina).
+2. Um **bell** escrito no tty do painel ativo do tmux — atravessa o tmux e o
+   SSH, tocando/piscando tanto no kitty quanto no Windows Terminal (acesso remoto).
+
+O `install.sh` cria o symlink em `~/.claude/hooks/` e faz um **merge idempotente**
+dos hooks em `~/.claude/settings.json` (preserva o resto das suas configs). Após
+instalar numa máquina nova, rode `/hooks` no Claude Code (ou reinicie) para
+recarregar a config. Para o bell aparecer no Windows Terminal, ajuste o
+`bellStyle` no perfil (ex.: `"window"` ou `"taskbar"`).
 
 ## tmux
 
