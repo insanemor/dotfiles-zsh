@@ -98,12 +98,14 @@ recarregar a config. Para o bell aparecer no Windows Terminal, ajuste o
 - A imagem de fundo (`background_image`) aponta para `~/.config/kitty/3.png`, que
   o `install.sh` symlinka a partir de `config/kitty/3.png` no repo. Para trocar a
   imagem, substitua esse arquivo no repo.
-- **`background_image` precisa estar dentro dos arquivos de tema também.**
-  O `kitty.conf` faz `include current-theme.conf` (e `dark-theme.auto.conf`),
-  e o kitty sobrescreve `background_image` quando o tema define `background`
-  (regra do `auto_color_scheme`). Por isso as duas linhas
-  (`background_image` + `background_image_layout scaled`) estão duplicadas
-  dentro de cada tema. Ao adicionar um tema novo, copie-as para lá também.
+- **Legibilidade do fundo (`background_tint`).** Controla o quanto a imagem
+  aparece: `0` = imagem em força total (atrapalha o texto), `1` = bem apagada.
+  Usamos **`0.85`** (imagem suave, texto legível). O kitty aplica o
+  `dark-theme.auto.conf` automaticamente no modo escuro do SO, e esse arquivo
+  sobrescreveria o tint do `kitty.conf` — por isso o `background_tint` está
+  padronizado em `0.85` no `kitty.conf` **e** em cada arquivo de tema
+  (`current-theme.conf`, `dark-theme.auto.conf`). Para deixar a imagem mais ou
+  menos visível, ajuste o **mesmo** valor nos três lugares. Ao adicionar um tema novo, copie-as para lá também.
 
 ## nvim
 
