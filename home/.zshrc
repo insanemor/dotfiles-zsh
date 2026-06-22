@@ -118,6 +118,9 @@ export PATH="$HOME/.opencode/bin:$PATH"
 # bun (ccusage e outros binarios globais)
 export PATH="$HOME/.bun/bin:$PATH"
 
+# npm globals (tree-sitter-cli, awsp, pnpm, etc.)
+[ -d "$HOME/.npm-global/bin" ] && export PATH="$HOME/.npm-global/bin:$PATH"
+
 ##########################################################################################################################################
 
 # tmux: inicia/anexa automaticamente a sessao "main" em terminais interativos.

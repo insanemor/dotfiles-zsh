@@ -172,8 +172,29 @@ step_asdf() {
 }
 
 # =====================================================================
-#  7) opencode + awsp (profile switcher)
+#  7) opencode + awsp (profile switcher) + pacotes npm do .tool-versions
+#     Entradas com sufixo "# npm" em .tool-versions são instaladas via
+#     `npm i -g` (ex.: tree-sitter-cli). Mantém o versionamento junto
+#     com as demais ferramentas.
 # =====================================================================
+step_npm_tools() {
+  local tv="$DOTFILES_DIR/home/.tool-versions"
+  [ -f "$tv" ] || { warn ".tool-versions não encontrado"; return; }
+  if ! have npm; then warn "npm ausente, pulando pacotes npm do .tool-versions"; return; fi
+  log "Instalando pacotes npm versionados em .tool-versions…"
+  # formato: "<nome> <versão>  # npm"  (versão pode ficar vazia -> latest)
+  awk 'NF>=2 && tolower($3)=="#npm" {print $1"@"$2}' "$tv" | while read -r spec; do
+    [ -z "$spec" ] && continue
+    if npm ls -g "$spec" >/dev/null 2>&1; then
+      ok "já instalado: $spec"
+    else
+      log "npm i -g $spec"
+      npm i -g "$spec" >/dev/null 2>&1 && ok "instalado: $spec" \
+        || warn "falha ao instalar $spec"
+    fi
+  done
+}
+
 step_extras() {
   if [ -x "$HOME/.opencode/bin/opencode" ] || have opencode; then
     ok "opencode já instalado"
@@ -282,7 +303,7 @@ step_claude_hooks() {
 main() {
   case "${1:-all}" in
     link)  step_link; step_claude_hooks ;;
-    tools) step_omz; step_fzf; step_atuin; step_brew; step_asdf; step_extras; step_font; step_tmux ;;
+    tools) step_omz; step_fzf; step_atuin; step_brew; step_asdf; step_npm_tools; step_extras; step_font; step_tmux ;;
     all)
       step_pkgs
       step_omz
@@ -290,6 +311,7 @@ main() {
       step_atuin
       step_brew
       step_asdf
+      step_npm_tools
       step_extras
       step_font
       step_tmux

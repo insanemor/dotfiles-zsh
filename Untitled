@@ -1,0 +1,1 @@
+kitty --debug-config 2>&1 | grep -iE 'background_image|background_tint' | head

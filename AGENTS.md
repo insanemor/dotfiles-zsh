@@ -133,6 +133,12 @@ map for plugins that need explicit Git URLs: `bun`, `kubectx`,
 `tf-summarize`), then runs `asdf install` from `$HOME`. To add a tool,
 append a line to `.tool-versions` and re-run `./install.sh tools`.
 
+### npm tools versioned in `.tool-versions`
+
+Linhas terminadas em `# npm` (ex.: `tree-sitter-cli 0.26.9  # npm`) são
+instaladas por `step_npm_tools` via `npm i -g`. Use para pacotes sem
+plugin asdf.
+
 ## Things to watch out for
 
 - **`install.sh` runs `sudo apt-get` / `sudo pacman` and `chsh`** when run as
