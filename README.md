@@ -22,7 +22,8 @@ o ambiente do zero. Suporta **Ubuntu/Debian** (apt) e **Arch** (pacman) — o
 │   └── kitty/                 # vai para ~/.config/kitty/
 │       ├── kitty.conf
 │       ├── current-theme.conf
-│       └── dark-theme.auto.conf
+│       ├── dark-theme.auto.conf
+│       └── 3.png              # imagem de fundo (versionada junto da config)
 ├── claude/
 │   └── hooks/
 │       └── claude-notify.sh   # notificação (desktop + bell) -> ~/.claude/hooks/
@@ -92,8 +93,9 @@ recarregar a config. Para o bell aparecer no Windows Terminal, ajuste o
 ## kitty
 
 - Tema ativo em `current-theme.conf` (o kitty regrava esse arquivo ao trocar tema).
-- O `kitty.conf` aponta para uma imagem de fundo em `~/Pictures/3.png` — ajuste o
-  caminho ou remova a linha `background_image` se a imagem não existir.
+- A imagem de fundo (`background_image`) aponta para `~/.config/kitty/3.png`, que
+  o `install.sh` symlinka a partir de `config/kitty/3.png` no repo. Para trocar a
+  imagem, substitua esse arquivo no repo.
 
 ## Portabilidade
 
@@ -102,9 +104,9 @@ qualquer máquina/usuário:
 
 - O Homebrew é detectado automaticamente conforme o SO (Linux `/home/linuxbrew`,
   macOS ARM `/opt/homebrew`, macOS Intel `/usr/local`).
-- O `kitty.conf` usa `~/Pictures/3.png` na imagem de fundo. O kitty expande `~`
-  em `background_image`; no `map f9 ... set-background-image` o `~` pode não ser
-  expandido em todos os builds — ajuste se a imagem não carregar por esse atalho.
+- A imagem de fundo do kitty é versionada em `config/kitty/3.png` e symlinkada
+  para `~/.config/kitty/3.png` (o `kitty.conf` aponta para lá). Assim ela viaja
+  junto com a config — sem depender de `~/Pictures`.
 
 ## Copiar/colar (kitty + tmux)
 

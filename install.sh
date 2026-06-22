@@ -242,6 +242,7 @@ step_link() {
   link "$DOTFILES_DIR/config/kitty/kitty.conf"           "$HOME/.config/kitty/kitty.conf"
   link "$DOTFILES_DIR/config/kitty/current-theme.conf"   "$HOME/.config/kitty/current-theme.conf"
   link "$DOTFILES_DIR/config/kitty/dark-theme.auto.conf" "$HOME/.config/kitty/dark-theme.auto.conf"
+  link "$DOTFILES_DIR/config/kitty/3.png"                "$HOME/.config/kitty/3.png"
   # ~/.claude/ (hook de notificação)
   link "$DOTFILES_DIR/claude/hooks/claude-notify.sh"     "$HOME/.claude/hooks/claude-notify.sh"
 }
