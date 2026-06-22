@@ -1,0 +1,6 @@
+# Backups e arquivos temporários de editor/kitty
+*.bak
+*.swp
+*.swo
+*~
+*.pre-claude.bak
