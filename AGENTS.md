@@ -19,6 +19,7 @@ files" are shell scripts and config snippets.
 │   ├── .tmux.conf             # tmux config (prefix Ctrl-a, status bar styling, TPM)
 │   ├── .tmux-statusline.zsh   # shell hook → writes @env_info to tmux status bar
 │   ├── .tmux-claude-usage.sh  # reads ~/.cache/claude/usage.json, renders Claude usage
+│   ├── .tmux-minimax-usage.sh # fetches MiniMax Coding Plan quota, renders usage
 │   ├── .claude-statusline.sh  # Claude Code statusLine → writes the cache file above
 │   └── .tool-versions         # asdf-managed versions (single source of truth)
 ├── config/kitty/              # → ~/.config/kitty/
@@ -115,6 +116,16 @@ Two files cooperate to display Claude usage in the tmux status bar:
    `tmux.conf`. It `pgrep -x claude` first (silent if Claude isn't running),
    drops the segment when data is >5 min stale, and colors the 5h percentage
    green/yellow/red at <70/<90/≥90.
+3. `~/.tmux-minimax-usage.sh` — same slot in `tmux.conf`, fetches the
+   Coding Plan quota directly from `https://api.minimax.io/v1/token_plan/remains`
+   with the user's Bearer key (env `MINIMAX_API_KEY`, or falls back to
+   the MiniMax key in `~/.local/share/crush/crush.json`). Uses the
+   `current_interval_remaining_percent` / `current_weekly_remaining_percent`
+   fields; caches to `~/.cache/minimax/usage.json` for 5 min. Silent when
+   no key is set or `MINIMAX_BAR=0`. (Note: the MiniMax API exposes the
+   remaining percent directly — no subtraction from "total" needed; the
+   `total`/`usage_count` fields are 0 for this plan tier and were a
+   red-herring from older docs.)
 
 `~/.tmux-statusline.zsh` is a zsh `precmd` hook (runs in the background via
 `&!`) that pushes git/k8s/tf/aws/gcloud/python/node info into the tmux
