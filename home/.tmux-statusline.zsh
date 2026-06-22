@@ -18,11 +18,46 @@ _tmux_refresh_env() {
     emulate -L zsh
     local out=""
 
-    # --- git (branch ou hash curto) ---
-    local gb
-    gb=$(command git symbolic-ref --quiet --short HEAD 2>/dev/null) \
-      || gb=$(command git rev-parse --short HEAD 2>/dev/null)
-    [[ -n $gb ]] && out+="#[fg=#9dff6e]${_TMUX_ICON_GIT} ${gb}#[default]   "
+    # --- git (branch + ahead/behind + dirty) ---
+    # git status -sbunormal: por-branch, sem submodules, untracked visivel
+    # (omite o `untracked` na flag NAO mostra os "??", o que esvazia o contador).
+    # ~2ms em repo local; roda em &! no precmd, entao nao trava o prompt.
+    local gi
+    gi=$(command git status -sbunormal 2>/dev/null) || gi=""
+    if [[ -n $gi ]]; then
+      # primeira linha: "## <branch>..." ou "## <hash>... [ahead N, behind M]"
+      local gb
+      gb=$(printf '%s' "$gi" | head -1)
+      gb=${gb##*## }            # tira o "## "
+      gb=${gb%%...*}             # tira "...origin/X" pra mostrar so o branch local
+      out+="#[fg=#9dff6e]${_TMUX_ICON_GIT} ${gb}#[default]"
+
+      # ahead/behind: a parte entre [...] na primeira linha
+      local ab
+      ab=$(printf '%s' "$gi" | head -1 | grep -oE '\[.*\]' | head -1)
+      if [[ -n $ab ]]; then
+        # "ahead 2, behind 1" -> icones coloridos
+        local a b
+        a=$(printf '%s' "$ab" | grep -oE 'ahead [0-9]+' | grep -oE '[0-9]+')
+        b=$(printf '%s' "$ab" | grep -oE 'behind [0-9]+' | grep -oE '[0-9]+')
+        [[ -n $a && $a -gt 0 ]] && out+=" #[fg=#efc11a]↑${a}#[default]"
+        [[ -n $b && $b -gt 0 ]] && out+=" #[fg=#fc5e59]↓${b}#[default]"
+      fi
+
+      # arquivos modificados. Formato de `git status -sbunormal`:
+      #   "XY foo"   -> X = index (staged), Y = worktree (unstaged), espacos se ausentes
+      #   "?? foo"   -> untracked
+      # awk (NR>1) pula a linha de branch. awk eh mais robusto que grep
+      # pra contar linhas com regex contendo '?[]' (globs do shell).
+      local staged unstaged untracked
+      staged=$(printf '%s' "$gi" | awk 'NR>1 && /^[MDARC] / {n++} END{print n+0}')
+      unstaged=$(printf '%s' "$gi" | awk 'NR>1 && /^.[MDARC] / {n++} END{print n+0}')
+      untracked=$(printf '%s' "$gi" | awk 'NR>1 && /^[?][?] / {n++} END{print n+0}')
+      [[ -n $staged   && $staged   -gt 0 ]] && out+=" #[fg=#9dff6e]+${staged}#[default]"
+      [[ -n $unstaged && $unstaged -gt 0 ]] && out+=" #[fg=#efc11a]!${unstaged}#[default]"
+      [[ -n $untracked&& $untracked -gt 0 ]] && out+=" #[fg=#c39df5]?${untracked}#[default]"
+      out+="   "
+    fi
 
     # --- kubernetes (le do ~/.kube/config, instantaneo) ---
     local kc

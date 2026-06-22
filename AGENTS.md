@@ -118,7 +118,12 @@ Two files cooperate to display Claude usage in the tmux status bar:
 
 `~/.tmux-statusline.zsh` is a zsh `precmd` hook (runs in the background via
 `&!`) that pushes git/k8s/tf/aws/gcloud/python/node info into the tmux
-`@env_info` option — that's what feeds the right side of the bar.
+`@env_info` option — that's what feeds the right side of the bar. The git
+section uses `git status -sbunormal` (porcelain, no submodules, untracked
+included) and parses: branch name, `↑N` (ahead) / `↓N` (behind) from the
+`[ahead N, behind M]` line, and dirty counts as `+N` (staged) / `!N`
+(unstaged) / `?N` (untracked). It runs in `&!` so the git status overhead
+(~2ms) doesn't block the prompt.
 
 ### asdf
 

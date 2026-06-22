@@ -49,6 +49,8 @@ alias tg="terragrunt"
 alias ns="kubens"
 alias kx="kubectx"
 alias kvu="kubectl view-utilization -h"
+# lazygit: TUI de git estilo Source Control (stage/commit/push tudo via teclado)
+alias lg="lazygit"
 # eza (substituto moderno do ls): icons, grid e diretorios primeiro
 alias ls="eza --icons --grid --group-directories-first"
 alias ll="eza --icons --long --group-directories-first"
