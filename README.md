@@ -19,11 +19,12 @@ o ambiente do zero. Suporta **Ubuntu/Debian** (apt) e **Arch** (pacman) — o
 │   ├── .claude-statusline.sh  # statusLine do Claude Code (alimenta o item acima)
 │   └── .tool-versions         # versões geridas pelo asdf
 ├── config/
-│   └── kitty/                 # vai para ~/.config/kitty/
-│       ├── kitty.conf
-│       ├── current-theme.conf
-│       ├── dark-theme.auto.conf
-│       └── 3.png              # imagem de fundo (versionada junto da config)
+│   ├── kitty/                 # vai para ~/.config/kitty/
+│   │   ├── kitty.conf
+│   │   ├── current-theme.conf
+│   │   ├── dark-theme.auto.conf
+│   │   └── 3.png              # imagem de fundo (versionada junto da config)
+│   └── nvim/                  # vai para ~/.config/nvim/ (init.lua, lua/, lazy-lock.json)
 ├── claude/
 │   └── hooks/
 │       └── claude-notify.sh   # notificação (desktop + bell) -> ~/.claude/hooks/
@@ -60,6 +61,7 @@ arquivo existente em `~/.dotfiles-backup/<timestamp>/` antes de criar os symlink
 | Homebrew         | asdf, fd, lazygit, neovim, charmbracelet/tap/crush |
 | asdf (.tool-versions) | awscli, bun, gcloud, helm, k3d, k9s, kubectl, kubectx, nodejs, terraform, terragrunt, tf-summarize, velero |
 | tmux             | TPM + tmux-sensible, tmux-yank, tmux-resurrect, tmux-continuum |
+| nvim             | config completa (init.lua + lua/) + lazy-lock.json → ~/.config/nvim |
 | Claude Code      | hooks de notificação (Stop/Notification) → notify-send + bell no tmux |
 | Fonte            | FiraCode Nerd Font |
 
@@ -102,6 +104,28 @@ recarregar a config. Para o bell aparecer no Windows Terminal, ajuste o
   (regra do `auto_color_scheme`). Por isso as duas linhas
   (`background_image` + `background_image_layout scaled`) estão duplicadas
   dentro de cada tema. Ao adicionar um tema novo, copie-as para lá também.
+
+## nvim
+
+Config baseada em lazy.nvim, versionada inteira em `config/nvim/` e symlinkada
+para `~/.config/nvim/` (atalhos em `lua/config/keymaps.lua`, plugins em
+`lua/plugins/`). O `lazy-lock.json` fixa as versões dos plugins. Na primeira vez
+que abrir o `nvim` numa máquina nova, o lazy.nvim baixa os plugins
+automaticamente (ou rode `:Lazy sync`).
+
+## Atualizar uma máquina já configurada
+
+Os atalhos de kitty/tmux/nvim moram nos arquivos versionados. Para puxar as
+mudanças numa máquina que já rodou o instalador:
+
+```bash
+cd ~/dotfiles && git pull && ./install.sh link
+```
+
+Depois recarregue cada app (os atalhos novos só valem após o reload):
+- **kitty**: `Ctrl+Shift+F5` (ou feche/reabra a janela)
+- **tmux**: `Ctrl-a` + `r` (recarrega o `.tmux.conf`)
+- **nvim**: reabra; se necessário, `:Lazy sync`
 
 ## Portabilidade
 

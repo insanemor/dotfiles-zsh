@@ -243,6 +243,8 @@ step_link() {
   link "$DOTFILES_DIR/config/kitty/current-theme.conf"   "$HOME/.config/kitty/current-theme.conf"
   link "$DOTFILES_DIR/config/kitty/dark-theme.auto.conf" "$HOME/.config/kitty/dark-theme.auto.conf"
   link "$DOTFILES_DIR/config/kitty/3.png"                "$HOME/.config/kitty/3.png"
+  # ~/.config/nvim (config + atalhos do neovim) — symlink do diretório inteiro
+  link "$DOTFILES_DIR/config/nvim"                       "$HOME/.config/nvim"
   # ~/.claude/ (hook de notificação)
   link "$DOTFILES_DIR/claude/hooks/claude-notify.sh"     "$HOME/.claude/hooks/claude-notify.sh"
 }
