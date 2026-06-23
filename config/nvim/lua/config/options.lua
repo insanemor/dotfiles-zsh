@@ -17,13 +17,22 @@ opt.autoindent = true         -- mantem a indentacao da linha anterior
 opt.breakindent = true        -- linhas quebradas mantem indentacao
 
 -- --- Visual ---
-opt.wrap = false              -- nao quebra linhas longas (rola na horizontal)
+-- Quebra visual automatica: linhas longas quebram na tela enquanto voce digita,
+-- sem inserir line-breaks reais no arquivo. Pareado com `formatoptions` em
+-- keymaps.lua (textwidth) para que texto digitado em paragrafo continuo continue
+-- quebrando ate o limite, mas evitando wrap em codigo (commentstring/formatprg
+-- continuam nas suas defaults).
+opt.wrap = true               -- linhas longas quebram visualmente na tela
+opt.linebreak = true          -- quebra em caracteres "seguros" (,.;!? etc), nao no meio da palavra
+opt.showbreak = "↪  "         -- marcador discreto na linha de baixo
+opt.breakindentopt = "shift:0,sbr"  -- continuacao alinha com a linha de origem, marca o prefixo "↪  "
 opt.cursorline = true         -- destaca a linha onde esta o cursor
 opt.termguicolors = true      -- cores 24-bit (truecolor) — essencial p/ o tema
 opt.signcolumn = "yes"        -- coluna lateral sempre visivel (git/erros nao "pulam")
 opt.scrolloff = 8             -- mantem 8 linhas de folga acima/abaixo ao rolar
 opt.sidescrolloff = 8
-opt.colorcolumn = "100"       -- linha guia vertical na coluna 100
+opt.colorcolumn = "100"       -- linha guia vertical na coluna 100 (wrap desliga o scroll horizontal)
+opt.colorcolumn = ""          -- wrap = sem scroll horizontal; colorcolumn atrapalha a leitura
 opt.pumheight = 12            -- altura maxima do menu de autocomplete
 
 -- --- Busca ---
