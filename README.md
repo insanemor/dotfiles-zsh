@@ -24,7 +24,9 @@ o ambiente do zero. Suporta **Ubuntu/Debian** (apt) e **Arch** (pacman) — o
 │   │   ├── current-theme.conf
 │   │   ├── dark-theme.auto.conf
 │   │   └── 3.png              # imagem de fundo (versionada junto da config)
-│   └── nvim/                  # vai para ~/.config/nvim/ (init.lua, lua/, lazy-lock.json)
+│   ├── nvim/                  # vai para ~/.config/nvim/ (init.lua, lua/, lazy-lock.json)
+│   └── lazygit/
+│       └── config.yml         # tema (combina com o kitty) + layout focado
 ├── claude/
 │   └── hooks/
 │       └── claude-notify.sh   # notificação (desktop + bell) -> ~/.claude/hooks/
@@ -62,6 +64,7 @@ arquivo existente em `~/.dotfiles-backup/<timestamp>/` antes de criar os symlink
 | asdf (.tool-versions) | awscli, bun, gcloud, helm, k3d, k9s, kubectl, kubectx, nodejs, terraform, terragrunt, tf-summarize, velero |
 | tmux             | TPM + tmux-sensible, tmux-yank, tmux-resurrect, tmux-continuum |
 | nvim             | config completa (init.lua + lua/) + lazy-lock.json → ~/.config/nvim |
+| lazygit          | tema (laranja/roxo, combina com o kitty) + layout focado → ~/.config/lazygit |
 | Claude Code      | hooks de notificação (Stop/Notification) → notify-send + bell no tmux |
 | Fonte            | FiraCode Nerd Font |
 
@@ -114,6 +117,21 @@ para `~/.config/nvim/` (atalhos em `lua/config/keymaps.lua`, plugins em
 `lua/plugins/`). O `lazy-lock.json` fixa as versões dos plugins. Na primeira vez
 que abrir o `nvim` numa máquina nova, o lazy.nvim baixa os plugins
 automaticamente (ou rode `:Lazy sync`).
+
+## lazygit
+
+Tema com a paleta do kitty (laranja/roxo) e interface focada, em
+`config/lazygit/config.yml` → `~/.config/lazygit/config.yml`.
+
+- **`expandFocusedSidePanel: true`** — o painel em foco domina a tela e os demais
+  encolhem; navegando com `2` (Files), `3` (Branches) e `4` (Commits) você vê
+  praticamente só o painel relevante. O lazygit **não** permite esconder os
+  painéis Status (`1`) e Stash (`5`) da barra — isso é o mais perto disso.
+- **`showCommandLog: false`** — esconde o log de comandos (interface mais limpa).
+- **`nerdFontsVersion: "3"`** — ícones (usa a FiraCode Nerd Font).
+
+Para mudar as cores, edite o bloco `gui.theme`. Abrir: alias `lg` (do `.zshrc`)
+ou, dentro do tmux, `Ctrl-a` + `G` (popup flutuante).
 
 ## Atualizar uma máquina já configurada
 

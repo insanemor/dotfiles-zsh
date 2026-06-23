@@ -266,6 +266,8 @@ step_link() {
   link "$DOTFILES_DIR/config/kitty/3.png"                "$HOME/.config/kitty/3.png"
   # ~/.config/nvim (config + atalhos do neovim) — symlink do diretório inteiro
   link "$DOTFILES_DIR/config/nvim"                       "$HOME/.config/nvim"
+  # ~/.config/lazygit (tema + layout focado)
+  link "$DOTFILES_DIR/config/lazygit/config.yml"         "$HOME/.config/lazygit/config.yml"
   # ~/.claude/ (hook de notificação)
   link "$DOTFILES_DIR/claude/hooks/claude-notify.sh"     "$HOME/.claude/hooks/claude-notify.sh"
 }
