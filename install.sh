@@ -273,9 +273,13 @@ step_link() {
 }
 
 # =====================================================================
-#  11) Hooks de notificação do Claude Code (merge idempotente)
-#      Garante os hooks Stop/Notification no ~/.claude/settings.json
-#      sem destruir o restante das configs pessoais.
+#  11) Hooks + statusLine do Claude Code (merge idempotente)
+#      Garante os hooks Stop/Notification E o statusLine em
+#      ~/.claude/settings.json sem destruir o restante das configs
+#      pessoais. O statusLine alimenta ~/.cache/claude/usage.json,
+#      que e lido por ~/.tmux-claude-usage.sh para mostrar o uso
+#      na barra do tmux em QUALQUER sessao onde o `claude` rode
+#      (e nao apenas quando invocado via Crush).
 # =====================================================================
 step_claude_hooks() {
   have jq || { warn "jq ausente, pulando hooks do Claude"; return; }
@@ -284,18 +288,24 @@ step_claude_hooks() {
   [ -f "$s" ] || echo '{}' > "$s"
   tmp="$(mktemp)"
   if jq --arg stop '$HOME/.claude/hooks/claude-notify.sh stop' \
-        --arg notif '$HOME/.claude/hooks/claude-notify.sh notification' '
-        def ensure($event; $cmd):
+        --arg notif '$HOME/.claude/hooks/claude-notify.sh notification' \
+        --arg slcmd '$HOME/.claude-statusline.sh' '
+        def ensure_hook($event; $cmd):
           .hooks[$event] = ((.hooks[$event] // []) as $arr
             | if ($arr | tostring | contains("claude-notify.sh"))
               then $arr
               else $arr + [{hooks:[{type:"command", command:$cmd, timeout:5}]}]
               end);
-        ensure("Stop"; $stop) | ensure("Notification"; $notif)
+        def ensure_statusline($cmd):
+          if (.statusLine.type? and .statusLine.command? and (.statusLine.command | tostring | contains("claude-statusline.sh")))
+          then .
+          else .statusLine = {type:"command", command:$cmd}
+          end;
+        ensure_hook("Stop"; $stop) | ensure_hook("Notification"; $notif) | ensure_statusline($slcmd)
       ' "$s" > "$tmp" 2>/dev/null; then
-    mv "$tmp" "$s"; ok "hooks de notificação garantidos em ~/.claude/settings.json"
+    mv "$tmp" "$s"; ok "hooks + statusLine garantidos em ~/.claude/settings.json"
   else
-    rm -f "$tmp"; warn "não consegui atualizar os hooks do Claude (settings.json malformado?)"
+    rm -f "$tmp"; warn "não consegui atualizar o settings.json do Claude (malformado?)"
   fi
 }
 
