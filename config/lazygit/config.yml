@@ -1,11 +1,12 @@
 # lazygit — config versionada nos dotfiles
 # Vai para ~/.config/lazygit/config.yml (symlink criado pelo install.sh).
 gui:
-  # Painel em foco DOMINA a tela; os demais encolhem para 1 linha.
-  # Na prática vira a experiência "só files/branches/commits" ao navegar
-  # com as teclas 2 / 3 / 4 (o Status e o Stash ficam minimizados).
-  expandFocusedSidePanel: true
-  expandedSidePanelWeight: 2
+  # Mostra TODOS os painéis de lista juntos na coluna esquerda
+  # (Status, Files, Branches, Commits, Stash).
+  expandFocusedSidePanel: false
+  # A coluna das listas ocupa ~65% da largura -> o painel [0] Diff vira uma
+  # faixa estreita à direita (não dá pra escondê-lo de vez, mas fica pequeno).
+  sidePanelWidth: 0.65
   # Esconde o painel de log de comandos -> interface mais limpa.
   showCommandLog: false
   # Ícones Nerd Font (você tem a FiraCode Nerd Font instalada).
