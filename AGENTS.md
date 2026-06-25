@@ -54,6 +54,11 @@ After editing `~/.tmux.conf`, reload it inside tmux with **`prefix + r`**.
 After editing `claude/hooks/claude-notify.sh`, run `/hooks` inside Claude Code
 (or restart the Claude session) to reload the merged `settings.json`.
 
+After editing `.zshrc` blocks under the `Headroom` heading, open a new shell
+(or `exec zsh`) so the auto-start function picks up changes. The proxy itself
+runs idempotently in the background; logs land in
+`~/.cache/headroom/proxy.log` and the pid in `~/.cache/headroom/proxy.pid`.
+
 `install.sh` is **idempotent**: it skips work already done, makes backups of
 existing dotfiles to `~/.dotfiles-backup/<timestamp>/`, and only relinks a
 symlink when `readlink -f` of source and destination differ. Re-running it is

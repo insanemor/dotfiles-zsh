@@ -216,6 +216,66 @@ step_extras() {
 }
 
 # =====================================================================
+#  Headroom (compression proxy + MCP para Claude Code)
+#
+#  - Instala headroom-ai como uv tool (PEP 668 safe, isolado em
+#    ~/.local/share/uv/tools/headroom-ai, binário em ~/.local/bin/headroom).
+#  - Registra o MCP server "headroom" no Claude Code (idempotente via
+#    `headroom mcp install` — ele detecta duplicatas).
+#  - Mantém o proxy em http://127.0.0.1:8787 vivo, com upstream
+#    OpenAI-compat apontando para o MiniMax, para que o Crush
+#    (provider minimax-hr) também comprima o tráfego.
+#  - Log em ~/.cache/headroom/proxy.log; pid em ~/.cache/headroom/proxy.pid.
+# =====================================================================
+step_headroom() {
+  have uv || { warn "uv não disponível, pulando headroom"; return; }
+  if ! have headroom; then
+    log "Instalando headroom-ai (uv tool)…"
+    uv tool install "headroom-ai[all]" >/dev/null 2>&1 \
+      && ok "headroom instalado: $(headroom --version 2>&1 | head -1)" \
+      || { warn "falha ao instalar headroom-ai"; return; }
+  else
+    ok "headroom já instalado: $(headroom --version 2>&1 | head -1)"
+  fi
+
+  # MCP server no Claude Code (registra se ainda não estiver; tolera duplicatas)
+  if have claude; then
+    if claude mcp list 2>/dev/null | grep -q '^headroom:'; then
+      ok "headroom MCP já registrado no Claude Code"
+    else
+      log "Registrando headroom MCP no Claude Code…"
+      headroom mcp install >/dev/null 2>&1 \
+        && ok "headroom MCP registrado" \
+        || warn "falha ao registrar headroom MCP (rode: headroom mcp install)"
+    fi
+  fi
+
+  # Proxy: inicia/atualiza para que Crush (provider minimax-hr) também passe por ele.
+  local log_dir="$HOME/.cache/headroom"
+  local log_file="$log_dir/proxy.log"
+  local pid_file="$log_dir/proxy.pid"
+  mkdir -p "$log_dir"
+  local running=0
+  [ -f "$pid_file" ] && kill -0 "$(cat "$pid_file")" 2>/dev/null && running=1
+  pgrep -f "headroom proxy" >/dev/null 2>&1 && running=1
+  if [ "$running" = "1" ]; then
+    ok "headroom proxy já em execução"
+  else
+    log "Iniciando headroom proxy (porta 8787, upstream MiniMax)…"
+    OPENAI_TARGET_API_URL="https://api.minimax.io/v1" \
+    HEADROOM_OUTPUT_SHAPER=1 \
+      nohup headroom proxy --port 8787 --host 127.0.0.1 >"$log_file" 2>&1 &
+    echo $! > "$pid_file"
+    sleep 2
+    if pgrep -f "headroom proxy" >/dev/null 2>&1; then
+      ok "headroom proxy ativo (pid $(cat "$pid_file"), log: $log_file)"
+    else
+      warn "headroom proxy não subiu — veja $log_file"
+    fi
+  fi
+}
+
+# =====================================================================
 #  8) Fonte FiraCode Nerd Font
 # =====================================================================
 step_font() {
@@ -314,8 +374,8 @@ step_claude_hooks() {
 # =====================================================================
 main() {
   case "${1:-all}" in
-    link)  step_link; step_claude_hooks ;;
-    tools) step_omz; step_fzf; step_atuin; step_brew; step_asdf; step_npm_tools; step_extras; step_font; step_tmux ;;
+    link)  step_link; step_claude_hooks; step_headroom ;;
+    tools) step_omz; step_fzf; step_atuin; step_brew; step_asdf; step_npm_tools; step_extras; step_headroom; step_font; step_tmux ;;
     all)
       step_pkgs
       step_omz
@@ -325,6 +385,7 @@ main() {
       step_asdf
       step_npm_tools
       step_extras
+      step_headroom
       step_font
       step_tmux
       step_link
@@ -340,6 +401,8 @@ main() {
   echo "  • O kitty.conf referencia uma imagem de fundo (~/Pictures/3.png) — ajuste se faltar."
   echo "  • Notificações do Claude: rode /hooks no Claude Code (ou reinicie) p/ recarregar."
   echo "  • 1Password (agente SSH em ~/.1password/agent.sock) deve ser instalado à parte."
+  echo "  • Headroom (compression proxy + MCP) está instalado: rode 'headroom perf' e veja os savings."
+  echo "    Para usar com Crush/MiniMax, mantenha 'headroom proxy' rodando (provider 'minimax-hr' em crush.json)."
 }
 
 main "$@"

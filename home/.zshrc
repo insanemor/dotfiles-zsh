@@ -98,6 +98,33 @@ SSH_AUTH_SOCK=~/.1password/agent.sock
 
 alias vpninterna="sudo openfortivpn -c ~/.openfortivpn/config"
 
+# Headroom — compression proxy + MCP. Mantém `headroom proxy` em pé em
+# background (idempotente) e expõe atalhos curtos para o uso diário.
+if command -v headroom >/dev/null 2>&1; then
+  _hr_log_dir="${XDG_CACHE_HOME:-$HOME/.cache}/headroom"
+  _hr_log="$_hr_log_dir/proxy.log"
+  _hr_pid="$_hr_log_dir/proxy.pid"
+  _hr_start() {
+    mkdir -p "$_hr_log_dir"
+    if pgrep -f 'headroom proxy' >/dev/null 2>&1; then return; fi
+    [ -f "$_hr_pid" ] && kill -0 "$(cat "$_hr_pid")" 2>/dev/null && return
+    OPENAI_TARGET_API_URL="https://api.minimax.io/v1" \
+    HEADROOM_OUTPUT_SHAPER=1 \
+      nohup headroom proxy --port 8787 --host 127.0.0.1 >"$_hr_log" 2>&1 &
+    echo $! > "$_hr_pid"
+  }
+  _hr_start
+  alias hr='headroom'
+  # --no-proxy: o wrap tenta reiniciar o proxy se faltar a flag --savings-profile
+  # (problema conhecido em 0.27). Como o proxy já fica em pé pelo _hr_start,
+  # pulamos o self-restart.
+  alias hrw='headroom wrap claude --no-proxy'
+  alias hrp='headroom perf'
+  alias hrs='headroom stats'
+  # atalho pra rodar Claude já roteado pelo headroom, sem passar pelo wrap
+  alias hrc='ANTHROPIC_BASE_URL=http://127.0.0.1:8787 claude'
+fi
+
 # ##########################################################################################################################################
 
 # Atuin

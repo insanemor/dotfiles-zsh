@@ -66,6 +66,7 @@ arquivo existente em `~/.dotfiles-backup/<timestamp>/` antes de criar os symlink
 | nvim             | config completa (init.lua + lua/) + lazy-lock.json → ~/.config/nvim |
 | lazygit          | tema (laranja/roxo, combina com o kitty) + layout focado → ~/.config/lazygit |
 | Claude Code      | hooks de notificação (Stop/Notification) → notify-send + bell no tmux |
+| Headroom         | compression proxy + MCP server (instalado via `uv tool`; usado pelo Claude Code e pelo Crush/MiniMax) |
 | Fonte            | FiraCode Nerd Font |
 
 ## Notificações do Claude Code
@@ -85,6 +86,52 @@ dos hooks em `~/.claude/settings.json` (preserva o resto das suas configs). Apó
 instalar numa máquina nova, rode `/hooks` no Claude Code (ou reinicie) para
 recarregar a config. Para o bell aparecer no Windows Terminal, ajuste o
 `bellStyle` no perfil (ex.: `"window"` ou `"taskbar"`).
+
+## Headroom (compression proxy + MCP)
+
+[Headroom](https://github.com/headroomlabs-ai/headroom) é um proxy local que
+comprime tool outputs / logs / RAG / arquivos **antes** de chegarem no LLM
+(60–95% menos tokens, respostas equivalentes) e expõe um MCP server para o
+modelo recuperar o conteúdo original sob demanda (CCR). Funciona com qualquer
+cliente OpenAI/Anthropic-compatível, então dá para usar tanto com o **Claude
+Code** quanto com o **Crush** apontando para a MiniMax.
+
+Instalação e uso:
+
+```bash
+# 1) instalar (já faz parte do ./install.sh)
+uv tool install "headroom-ai[all]"
+
+# 2) registrar o MCP no Claude Code (idempotente)
+headroom mcp install
+
+# 3a) Claude Code: rodar com o proxy
+ANTHROPIC_BASE_URL=http://127.0.0.1:8787 claude
+# ou, de forma resumida, o wrapper oficial:
+headroom wrap claude
+# atalhos do .zshrc: hr, hrw, hrp, hrs
+
+# 3b) Crush / MiniMax: o provider 'minimax-hr' em crush.json
+# já aponta para http://127.0.0.1:8787/v1 e o proxy encaminha para
+# https://api.minimax.io/v1 (OPENAI_TARGET_API_URL). É só manter
+# 'headroom proxy' em execução e usar o crush normalmente.
+
+# 4) acompanhar a economia
+headroom perf     # relatório agregado
+headroom stats    # snapshot ao vivo
+curl -s http://127.0.0.1:8787/stats | jq
+```
+
+O `install.sh` (`step_headroom`) deixa o proxy rodando em background em
+`http://127.0.0.1:8787` (log em `~/.cache/headroom/proxy.log`) e registra o
+MCP server no Claude Code. O `.zshrc` auto-inicia o proxy na primeira seção
+de shell caso ele não esteja de pé, e expõe os atalhos `hr` / `hrw` / `hrp` /
+`hrs`. Para ativar o corte de tokens de output (5x mais caro em Opus):
+
+```bash
+export HEADROOM_OUTPUT_SHAPER=1
+headroom proxy --port 8787
+```
 
 ## tmux
 
