@@ -4,3 +4,6 @@
 *.swo
 *~
 *.pre-claude.bak
+
+# Estado de ferramentas de codigo (workspace do Serena, etc.)
+.serena/
