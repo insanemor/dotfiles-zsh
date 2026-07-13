@@ -152,8 +152,31 @@ export PATH="$HOME/.bun/bin:$PATH"
 
 # tmux: inicia/anexa automaticamente a sessao "main" em terminais interativos.
 # Guards: so em shell interativo, fora de outro tmux e fora do terminal do VSCode.
+# Excecao: terminais dropdown (Guake/Yakuake) abrem o zsh puro, SEM tmux.
 # Para DESATIVAR, basta comentar este bloco.
-if [[ -o interactive ]] && [[ -z "$TMUX" ]] && [[ "$TERM_PROGRAM" != "vscode" ]] && command -v tmux >/dev/null; then
+
+# Detecta se estamos rodando dentro de um terminal dropdown (Guake/Yakuake).
+# Atalho: o Guake exporta GUAKE_TAB_UUID em cada aba. Fallback robusto: sobe a
+# arvore de processos via /proc procurando "guake"/"yakuake" (cobre o Yakuake,
+# que reaproveita o Konsole e nao exporta env var propria confiavel).
+_is_dropdown_terminal() {
+  [[ -n "$GUAKE_TAB_UUID" ]] && return 0
+  local pid=$PPID comm stat
+  while [[ -n "$pid" && "$pid" != "0" && "$pid" != "1" ]]; do
+    [[ -r "/proc/$pid/comm" ]] || break
+    comm="$(< /proc/$pid/comm)"
+    case "$comm" in
+      (*guake*|*yakuake*) return 0 ;;
+    esac
+    stat="$(< /proc/$pid/stat)" || break
+    stat="${stat#*) }"        # descarta "pid (comm) "; sobra "state ppid ..."
+    pid="${${(z)stat}[2]}"    # campo 2 = ppid
+  done
+  return 1
+}
+
+if [[ -o interactive ]] && [[ -z "$TMUX" ]] && [[ "$TERM_PROGRAM" != "vscode" ]] \
+   && ! _is_dropdown_terminal && command -v tmux >/dev/null; then
   tmux attach -t main 2>/dev/null || tmux new -s main
 fi
 
