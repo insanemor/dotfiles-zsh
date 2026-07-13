@@ -136,11 +136,21 @@ headroom proxy --port 8787
 ## tmux
 
 - Prefixo trocado para **Ctrl-a**.
-- Após instalar, finalize os plugins dentro do tmux com **prefixo + I**.
+- O `install.sh` já instala o TPM e os plugins automaticamente (o `step_link`
+  roda antes do `step_tmux`, então o `~/.tmux.conf` já existe quando o TPM lê a
+  lista de `@plugin`). Se algum faltar, finalize dentro do tmux com **prefixo + I**.
+- **Sessões persistentes (resurrect + continuum).** As sessões são salvas
+  sozinhas a cada 15 min e restauradas ao subir o tmux — **sobrevivem a
+  reboot/desligamento**. Config no `.tmux.conf`: `@continuum-restore on`,
+  `@continuum-save-interval 15`, `@resurrect-capture-pane-contents on`. Atalhos
+  padrão: salvar na hora **prefixo + Ctrl-s**, restaurar **prefixo + Ctrl-r**.
 - A barra superior mostra git/aws/kube/terraform/gcloud (via `.tmux-statusline.zsh`)
   e o uso do Claude Code (via `.tmux-claude-usage.sh`).
-- O `~/.zshrc` anexa automaticamente à sessão `main` em terminais interativos
-  (exceto no terminal integrado do VS Code).
+- O `~/.zshrc` anexa automaticamente à sessão `main` em terminais interativos —
+  **exceto** no terminal integrado do VS Code e em **terminais dropdown
+  (Guake/Yakuake)**, que abrem o zsh puro, sem tmux. A detecção usa a env var
+  `GUAKE_TAB_UUID` e, como fallback, sobe a árvore de processos via `/proc`
+  procurando `guake`/`yakuake`.
 
 ## kitty
 

@@ -46,8 +46,12 @@ There is no build, lint, or test step. The only top-level entry point is
 SKIP_PKGS=1 ./install.sh # skip the apt/pacman step but keep going
 ```
 
-After `./install.sh`, inside an active tmux session run **`prefix + I`** (with
-prefix = `Ctrl-a`) to finalize TPM plugin installation.
+`./install.sh` installs the TPM plugins non-interactively: in `all` mode
+`step_link` runs **before** `step_tmux`, so `~/.tmux.conf` already exists when
+TPM parses the `@plugin` list (without it, TPM installs zero plugins — this is
+why the ordering matters). `step_tmux` then verifies `tmux-resurrect` and
+`tmux-continuum` are present. If a plugin is still missing, run **`prefix + I`**
+(prefix = `Ctrl-a`) inside tmux to finish.
 
 After editing `~/.tmux.conf`, reload it inside tmux with **`prefix + r`**.
 
@@ -177,6 +181,20 @@ plugin asdf.
 - **Background in tmux status update**: `_tmux_refresh_env` runs `&!` so it
   doesn't block the prompt, but it also calls `tmux refresh-client -S` which
   redraws the bar.
+- **The `.zshrc` tmux auto-attach has exceptions.** It attaches to session
+  `main` only in interactive shells that are NOT inside another tmux (`$TMUX`),
+  NOT the VS Code integrated terminal (`$TERM_PROGRAM`), and NOT a dropdown
+  terminal. `_is_dropdown_terminal` checks `GUAKE_TAB_UUID` first, then walks
+  the `/proc` parent chain for `guake`/`yakuake`. The env var is the reliable
+  signal for Guake — its tmux server is often reparented to systemd, so the
+  process walk alone would miss it; the /proc walk covers Yakuake's first
+  shell (before any tmux exists).
+- **Session persistence is on by default** via `tmux-resurrect` +
+  `tmux-continuum` (`.tmux.conf`): `@continuum-restore on` auto-restores on
+  server start, `@continuum-save-interval 15` autosaves every 15 min. Saves
+  live under `~/.local/share/tmux/resurrect/`. This interacts with the .zshrc
+  auto-attach: the first shell after a reboot runs `tmux new -s main`, which
+  boots the server and triggers continuum's restore of the other sessions.
 - **1Password SSH agent** (`SSH_AUTH_SOCK=~/.1password/agent.sock` in `.zshrc`)
   is referenced but the agent is NOT installed by `install.sh` — README
   explicitly calls this out as a manual step.
