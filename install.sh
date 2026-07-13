@@ -297,14 +297,38 @@ step_font() {
 # =====================================================================
 step_tmux() {
   local tpm="$HOME/.tmux/plugins/tpm"
+  local plugins_dir="$HOME/.tmux/plugins"
+
+  # 1) TPM (gerenciador de plugins)
   if [ -d "$tpm" ]; then ok "TPM já instalado"; else
     log "Instalando TPM…"
     git clone --depth 1 https://github.com/tmux-plugins/tpm "$tpm" || warn "falha no TPM"
   fi
-  if [ -d "$tpm" ] && have tmux; then
-    log "Instalando plugins do tmux…"
-    "$tpm/bin/install_plugins" >/dev/null 2>&1 && ok "plugins do tmux instalados" \
-      || warn "rode dentro do tmux: prefixo + I"
+  { [ -d "$tpm" ] && have tmux; } || { warn "TPM ou tmux ausente; pulando plugins do tmux"; return; }
+
+  # 2) O TPM descobre os @plugin lendo o ~/.tmux.conf (ou o caminho XDG).
+  #    Sem esse arquivo ele instala ZERO plugins — por isso o step_link
+  #    precisa rodar antes (no modo 'all' a ordem ja garante isso).
+  local conf="$HOME/.tmux.conf"
+  [ -f "${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf" ] && conf="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
+  if [ ! -f "$conf" ]; then
+    warn "~/.tmux.conf ainda nao existe; rode './install.sh link' antes de instalar os plugins"
+    return
+  fi
+
+  # 3) Instala/atualiza os plugins declarados no tmux.conf (resurrect, continuum, …).
+  #    Nao precisa do tmux rodando: o install_plugins parseia o proprio .tmux.conf.
+  log "Instalando plugins do tmux (resurrect/continuum/…)…"
+  "$tpm/bin/install_plugins" >/dev/null 2>&1 || true
+
+  # 4) Verifica o que o resurrect precisa: resurrect + continuum clonados.
+  local missing=""
+  [ -d "$plugins_dir/tmux-resurrect" ] || missing="$missing tmux-resurrect"
+  [ -d "$plugins_dir/tmux-continuum" ] || missing="$missing tmux-continuum"
+  if [ -n "$missing" ]; then
+    warn "plugins faltando:$missing — abra o tmux e finalize com: prefixo (Ctrl-a) + I"
+  else
+    ok "plugins do tmux prontos (resurrect + continuum instalados)"
   fi
 }
 
@@ -387,8 +411,8 @@ main() {
       step_extras
       step_headroom
       step_font
-      step_tmux
       step_link
+      step_tmux
       step_claude_hooks
       ;;
     *) echo "uso: $0 [all|link|tools]"; exit 1 ;;
