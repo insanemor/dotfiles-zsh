@@ -1,0 +1,18 @@
+id = "git-status"
+name = "Git status sidebar"
+version = "0.1.0"
+min_herdr_version = "0.7.0"
+description = "Posts local git branches + dirty marker as $local_branches on the focused workspace's first pane."
+platforms = ["linux", "macos"]
+
+[[events]]
+on = "workspace.created"
+command = ["python3", "publish.py", "workspace"]
+
+[[events]]
+on = "pane.created"
+command = ["python3", "publish.py", "pane"]
+
+[[events]]
+on = "pane.focused"
+command = ["python3", "publish.py", "focus"]

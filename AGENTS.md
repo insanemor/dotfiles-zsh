@@ -105,9 +105,8 @@ The hook itself (`claude/hooks/claude-notify.sh`):
 
 The sidebar (`prefix + w`) is **not** enabled by default. `config/herdr/config.toml`
 declares `[ui.sidebar.agents]` and `[ui.sidebar.spaces]` explicitly. The Spaces
-rows include `branch` and `git_status` natively, and the custom `$claude_usage`
-token — which renders the 5h/7d/ctx percentages from
-`~/.cache/claude/usage.json` (written by `~/.claude-statusline.sh`).
+rows include `branch`, `git_status`, the custom `$local_branches` token, and
+`$claude_usage` (5h/7d/ctx percentages from `~/.cache/claude/usage.json`).
 
 The `$claude_usage` token is provided by the **herdr-claude-usage plugin**
 (`alejodelosrios/herdr-claude-usage`), installed by `install.sh`
@@ -121,6 +120,14 @@ herdr plugin action invoke start --plugin unit1.claude-usage
 
 After the first `start`, the monitor hooks into `workspace.created` and
 `pane.created` events automatically — no need to re-run it on every restart.
+
+The `$local_branches` token is provided by the **local `git-status` plugin**
+in `config/herdr/plugins/git-status/` (manifest + `publish.py`), linked by
+`install.sh` (`step_herdr_git_status`) via `herdr plugin link`. It listens
+to `workspace.created` / `pane.created` / `pane.focused` and posts a
+compact branch list + dirty marker to the focused pane, so the sidebar
+shows every local branch (e.g. `main* dev feat/foo ±2`) without opening
+lazygit just to check.
 
 The `~/.tmux-claude-usage.sh` and `~/.tmux-minimax-usage.sh` files were
 removed in the herdr migration; usage now lives in the herdr sidebar

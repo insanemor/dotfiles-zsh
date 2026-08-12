@@ -158,7 +158,8 @@ rows = [
 row_gap = 0
 rows = [
   ["state_icon", "workspace"],
-  ["branch", "git_status"],
+  ["branch", "$local_branches"],
+  ["git_status"],
   ["$claude_usage"],
 ]
 

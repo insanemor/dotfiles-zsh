@@ -272,6 +272,27 @@ step_herdr_claude_usage() {
 }
 
 # =====================================================================
+#  9c) Plugin local git-status (vinculado deste repo)
+#      Publica o token $local_branches (lista compacta de branches
+#      locais + marker dirty) na pane focada. Lê
+#      config/herdr/plugins/git-status/publish.py e o manifest
+#      herdr-plugin.toml. Idempotente.
+# =====================================================================
+step_herdr_git_status() {
+  have herdr || { warn "herdr indisponível; pulando plugin git-status"; return; }
+  local src="$DOTFILES_DIR/config/herdr/plugins/git-status"
+  [ -f "$src/herdr-plugin.toml" ] || { warn "manifest do plugin git-status ausente em $src"; return; }
+  if herdr plugin list 2>/dev/null | grep -q "git-status"; then
+    ok "plugin git-status já linkado"
+  else
+    log "Vinculando plugin local git-status…"
+    herdr plugin link "$src" \
+      && ok "plugin git-status linkado (atualiza $local_branches na pane focada)" \
+      || warn "falha ao linkar o plugin (rode manualmente: herdr plugin link $src)"
+  fi
+}
+
+# =====================================================================
 #  10) Symlinks dos dotfiles
 # =====================================================================
 step_link() {
@@ -340,8 +361,8 @@ step_claude_hooks() {
 # =====================================================================
 main() {
   case "${1:-all}" in
-    link)  step_link; step_claude_hooks; step_herdr_claude_usage ;;
-    tools) step_omz; step_fzf; step_atuin; step_brew; step_asdf; step_npm_tools; step_extras; step_font; step_herdr; step_herdr_claude_usage ;;
+    link)  step_link; step_claude_hooks; step_herdr_claude_usage; step_herdr_git_status ;;
+    tools) step_omz; step_fzf; step_atuin; step_brew; step_asdf; step_npm_tools; step_extras; step_font; step_herdr; step_herdr_claude_usage; step_herdr_git_status ;;
     all)
       step_pkgs
       step_omz
@@ -355,6 +376,7 @@ main() {
       step_link
       step_herdr
       step_herdr_claude_usage
+      step_herdr_git_status
       step_claude_hooks
       ;;
     *) echo "uso: $0 [all|link|tools]"; exit 1 ;;
@@ -370,6 +392,9 @@ main() {
   echo "    Plugin de uso do Claude instalado por herdr-claude-usage; na primeira"
   echo "    vez é preciso ativar dentro do herdr: herdr plugin action invoke start"
   echo "    --plugin unit1.claude-usage."
+  echo "    Plugin local git-status publica o token \$local_branches (lista de"
+  echo "    branches locais + marker dirty) na pane focada — dispensando o lazygit"
+  echo "    só para conferir branches."
   echo "  • Sessoes do herdr sobrevivem a reboot via [session] resume_agents_on_restore"
   echo "    e o replay do historico via [experimental] pane_history."
   echo "  • Terminais dropdown (Guake/Yakuake) abrem o zsh puro, sem subir o herdr."

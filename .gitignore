@@ -7,3 +7,7 @@
 
 # Estado de ferramentas de codigo (workspace do Serena, etc.)
 .serena/
+
+# Python bytecode from herdr plugins
+config/herdr/plugins/**/__pycache__/
+config/herdr/plugins/**/*.pyc
