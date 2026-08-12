@@ -1,6 +1,6 @@
 # dotfiles
 
-Meus dotfiles (zsh + kitty + tmux) e um script de bootstrap para reinstalar
+Meus dotfiles (zsh + kitty + herdr) e um script de bootstrap para reinstalar
 o ambiente do zero. Suporta **Ubuntu/Debian** (apt) e **Arch** (pacman) — o
 `install.sh` detecta a distro automaticamente.
 
@@ -13,10 +13,7 @@ o ambiente do zero. Suporta **Ubuntu/Debian** (apt) e **Arch** (pacman) — o
 │   ├── .zshrc
 │   ├── .fzf.zsh
 │   ├── .p10k.zsh              # tema do prompt (Powerlevel10k)
-│   ├── .tmux.conf
-│   ├── .tmux-statusline.zsh   # contexto (git/aws/kube/tf/gcloud) na barra do tmux
-│   ├── .tmux-claude-usage.sh  # uso do Claude Code na barra do tmux
-│   ├── .claude-statusline.sh  # statusLine do Claude Code (alimenta o item acima)
+│   ├── .claude-statusline.sh  # statusLine do Claude Code
 │   └── .tool-versions         # versões geridas pelo asdf
 ├── config/
 │   ├── kitty/                 # vai para ~/.config/kitty/
@@ -24,6 +21,8 @@ o ambiente do zero. Suporta **Ubuntu/Debian** (apt) e **Arch** (pacman) — o
 │   │   ├── current-theme.conf
 │   │   ├── dark-theme.auto.conf
 │   │   └── 3.png              # imagem de fundo (versionada junto da config)
+│   ├── herdr/                 # vai para ~/.config/herdr/   (substituto do tmux)
+│   │   └── config.toml        # prefix Ctrl-a, splits |/-, hjkl, popups lazygit/lazydocker
 │   ├── nvim/                  # vai para ~/.config/nvim/ (init.lua, lua/, lazy-lock.json)
 │   └── lazygit/
 │       └── config.yml         # tema (combina com o kitty) + layout focado
@@ -62,10 +61,10 @@ arquivo existente em `~/.dotfiles-backup/<timestamp>/` antes de criar os symlink
 | Ferramentas      | fzf, atuin, opencode, awsp |
 | Homebrew         | asdf, fd, lazygit, neovim, charmbracelet/tap/crush |
 | asdf (.tool-versions) | awscli, bun, gcloud, helm, k3d, k9s, kubectl, kubectx, nodejs, terraform, terragrunt, tf-summarize, velero |
-| tmux             | TPM + tmux-sensible, tmux-yank, tmux-resurrect, tmux-continuum |
+| herdr            | binary único em ~/.local/bin (instalado via script oficial em `step_herdr`); config em `~/.config/herdr/config.toml` (symlink deste repo) |
 | nvim             | config completa (init.lua + lua/) + lazy-lock.json → ~/.config/nvim |
 | lazygit          | tema (laranja/roxo, combina com o kitty) + layout focado → ~/.config/lazygit |
-| Claude Code      | hooks de notificação (Stop/Notification) → notify-send + bell no tmux |
+| Claude Code      | hooks de notificação (Stop/Notification) → notify-send + bell no tty |
 | Fonte            | FiraCode Nerd Font |
 
 ## Notificações do Claude Code
@@ -77,8 +76,9 @@ arquivo existente em `~/.dotfiles-backup/<timestamp>/` antes de criar os symlink
 
 Em cada evento faz duas coisas:
 1. `notify-send` — notificação no desktop Linux (quando você está na máquina).
-2. Um **bell** escrito no tty do painel ativo do tmux — atravessa o tmux e o
-   SSH, tocando/piscando tanto no kitty quanto no Windows Terminal (acesso remoto).
+2. Um **bell** escrito em `/dev/tty` (o tty do shell atual — dentro do
+   herdr isso é o tty da pane em foco). Atravessa o herdr e o SSH, tocando/
+   piscando tanto no kitty quanto no Windows Terminal (acesso remoto).
 
 O `install.sh` cria o symlink em `~/.claude/hooks/` e faz um **merge idempotente**
 dos hooks em `~/.claude/settings.json` (preserva o resto das suas configs). Após
@@ -86,24 +86,58 @@ instalar numa máquina nova, rode `/hooks` no Claude Code (ou reinicie) para
 recarregar a config. Para o bell aparecer no Windows Terminal, ajuste o
 `bellStyle` no perfil (ex.: `"window"` ou `"taskbar"`).
 
-## tmux
+## herdr
 
-- Prefixo trocado para **Ctrl-a**.
-- O `install.sh` já instala o TPM e os plugins automaticamente (o `step_link`
-  roda antes do `step_tmux`, então o `~/.tmux.conf` já existe quando o TPM lê a
-  lista de `@plugin`). Se algum faltar, finalize dentro do tmux com **prefixo + I**.
-- **Sessões persistentes (resurrect + continuum).** As sessões são salvas
-  sozinhas a cada 15 min e restauradas ao subir o tmux — **sobrevivem a
-  reboot/desligamento**. Config no `.tmux.conf`: `@continuum-restore on`,
-  `@continuum-save-interval 15`, `@resurrect-capture-pane-contents on`. Atalhos
-  padrão: salvar na hora **prefixo + Ctrl-s**, restaurar **prefixo + Ctrl-r**.
-- A barra superior mostra git/aws/kube/terraform/gcloud (via `.tmux-statusline.zsh`)
-  e o uso do Claude Code (via `.tmux-claude-usage.sh`).
-- O `~/.zshrc` anexa automaticamente à sessão `main` em terminais interativos —
-  **exceto** no terminal integrado do VS Code e em **terminais dropdown
-  (Guake/Yakuake)**, que abrem o zsh puro, sem tmux. A detecção usa a env var
-  `GUAKE_TAB_UUID` e, como fallback, sobe a árvore de processos via `/proc`
-  procurando `guake`/`yakuake`.
+[herdr](https://herdr.dev) é um terminal multiplexer focado em AI coding agents
+(escrito em Rust, agent-aware: detecta automaticamente se o Claude Code/Codex/etc
+está **working/blocked/idle/done** lendo o output do painel). Substitui o tmux
+com a mesma memória muscular — o `config/herdr/config.toml` deste repo
+reproduz os atalhos do antigo `.tmux.conf`:
+
+| Ação                            | Atalho            | Equivalente no tmux |
+|---------------------------------|-------------------|---------------------|
+| Prefixo                         | `Ctrl-a`          | `Ctrl-a` (mesmo)    |
+| Split vertical                  | `prefix + \|`     | `prefix + \|`       |
+| Split horizontal                | `prefix + -`      | `prefix + -`        |
+| Navegar entre paineis           | `Alt + setas` ou `prefix + h/j/k/l` | idem |
+| Swap de paineis                 | `prefix + Shift + h/j/k/l` | idem |
+| Fechar painel                   | `prefix + x`      | `prefix + x`        |
+| Zoom painel (tela cheia)        | `prefix + z`      | `prefix + z`        |
+| Modo resize (hjkl, Esc sai)     | `prefix + r`      | `prefix + r` (resize) |
+| Nova tab (janela)               | `prefix + c`      | `prefix + c` (new-window) |
+| Fechar tab                      | `prefix + Shift + x` | `prefix + &` (kill-window) |
+| Nova workspace (sessão)         | `prefix + Shift + n` | `prefix + Ctrl-n` |
+| Fechar workspace                | `prefix + Shift + d` | `prefix + :kill-session` |
+| Renomear workspace              | `prefix + Shift + w` | `prefix + $` |
+| Ir para workspace               | `prefix + g`      | `prefix + s` (choose-tree) |
+| Trocar workspaces sem prefixo   | `Ctrl + Up/Down`  | idem                |
+| Trocar tabs sem prefixo         | `Shift + Left/Right` | idem              |
+| lazygit (popup 90%)             | `prefix + Shift + g` | `prefix + G`      |
+| lazydocker (popup 90%)          | `prefix + Alt + d`   | `prefix + D`     |
+| Recarregar config               | `prefix + Shift + r` | `prefix + r` (source-file) |
+| Lista de todos os atalhos       | `prefix + ?`      | `prefix + ?`        |
+
+(O `prefix + Shift + r` para reload é o default do herdr; trocar `prefix + r`
+por resize mode é uma escolha consciente — no tmux era `r` que recarregava,
+aqui é `r` que entra no resize mode.)
+
+- **Persistência de sessão.** `resume_agents_on_restore = true` faz
+  Claude Code/Codex/etc retomarem as conversas após restart do servidor;
+  `pane_history = true` (experimental) reproduz o conteúdo recente dos
+  painéis. **Substitui** o antigo par tmux-resurrect + tmux-continuum.
+- O `~/.zshrc` executa `herdr --session main` automaticamente em terminais
+  interativos — **exceto** no terminal integrado do VS Code e em **terminais
+  dropdown (Guake/Yakuake)**, que abrem o zsh puro, sem herdr. A detecção usa
+  a env var `GUAKE_TAB_UUID` e, como fallback, sobe a árvore de processos via
+  `/proc` procurando `guake`/`yakuake`.
+- Após editar `config/herdr/config.toml`, recarregue dentro do herdr com
+  **`prefix + Shift + r`**, ou rode `herdr server reload-config` em qualquer
+  painel.
+
+> **Por que `prefix + Alt + d` para lazydocker?** O `prefix + Shift + d` colide
+> com `close_workspace`, e `prefix + Shift + [hjkl]` colidem com os 4
+> `swap_pane_*`. `prefix + Alt + d` é o atalho livre mais próximo do
+> mnemônico.
 
 ## kitty
 
@@ -141,11 +175,11 @@ Tema com a paleta do kitty (laranja/roxo) e interface focada, em
 - **`nerdFontsVersion: "3"`** — ícones (usa a FiraCode Nerd Font).
 
 Para mudar as cores, edite o bloco `gui.theme`. Abrir: alias `lg` (do `.zshrc`)
-ou, dentro do tmux, `Ctrl-a` + `G` (popup flutuante).
+ou, dentro do herdr, `prefix + Shift + g` (popup flutuante).
 
 ## Atualizar uma máquina já configurada
 
-Os atalhos de kitty/tmux/nvim moram nos arquivos versionados. Para puxar as
+Os atalhos de kitty/herdr/nvim moram nos arquivos versionados. Para puxar as
 mudanças numa máquina que já rodou o instalador:
 
 ```bash
@@ -154,7 +188,7 @@ cd ~/dotfiles && git pull && ./install.sh link
 
 Depois recarregue cada app (os atalhos novos só valem após o reload):
 - **kitty**: `Ctrl+Shift+F5` (ou feche/reabra a janela)
-- **tmux**: `Ctrl-a` + `r` (recarrega o `.tmux.conf`)
+- **herdr**: `prefix + Shift + r` (recarrega `config.toml`) ou `herdr server reload-config`
 - **nvim**: reabra; se necessário, `:Lazy sync`
 
 ## Portabilidade
@@ -168,14 +202,14 @@ qualquer máquina/usuário:
   para `~/.config/kitty/3.png` (o `kitty.conf` aponta para lá). Assim ela viaja
   junto com a config — sem depender de `~/Pictures`.
 
-## Copiar/colar (kitty + tmux)
+## Copiar/colar (kitty + herdr)
 
-- Como o `~/.zshrc` entra no tmux automaticamente e o tmux usa `mouse on`,
-  arrastar o mouse seleciona dentro do **tmux** (copy-mode), não do kitty.
+- Como o `~/.zshrc` entra no herdr automaticamente e o herdr captura o mouse,
+  arrastar o mouse seleciona dentro do **herdr** (copy-mode), não do kitty.
 - Para copiar no Wayland é preciso o `wl-clipboard` (o `install.sh` já instala);
-  o `tmux-yank` e o kitty o utilizam para escrever no clipboard.
+  o herdr e o kitty o utilizam para escrever no clipboard.
 - Atalhos: copiar `Ctrl+Shift+C`, colar `Ctrl+Shift+V`, colar seleção `Shift+Insert`.
-- Para selecionar ignorando o tmux (direto no kitty), segure **Shift** ao arrastar.
+- Para selecionar ignorando o herdr (direto no kitty), segure **Shift** ao arrastar.
 
 ## Pontos a instalar/configurar à parte
 

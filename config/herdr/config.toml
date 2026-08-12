@@ -1,0 +1,175 @@
+# =====================================================================
+#  ~/.config/herdr/config.toml
+#
+#  Configuracao do herdr (https://herdr.dev) — substituto do tmux.
+#  Reproduz os mesmos atalhos do antigo ~/.tmux.conf para nao quebrar
+#  a memoria muscular:
+#
+#    prefix            = Ctrl-a                  (era Ctrl-a no tmux)
+#    split vertical    = prefix + |              (tmux: prefix + |)
+#    split horizontal  = prefix + -              (tmux: prefix + -)
+#    navegar paineis   = Alt + setas (sem prefixo) + prefix + hjkl
+#    swap paineis      = prefix + Shift+HJKL     (estilo vim)
+#    nova tab          = prefix + c              (era nova janela no tmux)
+#    fechar tab        = prefix + Shift+x        (kill-window no tmux)
+#    nova workspace    = prefix + Shift+n        (nova sessao no tmux)
+#    fechar workspace  = prefix + Shift+d        (kill-session no tmux)
+#    rename workspace  = prefix + Shift+w        (rename-session no tmux)
+#    ir para workspace = prefix + g              (switch-client no tmux)
+#    fechar painel     = prefix + x              (kill-pane no tmux)
+#    zoom painel       = prefix + z
+#    reload config     = prefix + Shift+r        (default do herdr)
+#    resize mode       = prefix + r              (hjkl redimensiona, Esc sai)
+#    trocar tabs       = Shift + Left/Right      (sem prefixo)
+#    trocar workspaces = Ctrl + Up/Down          (sem prefixo)
+#    lazygit           = prefix + Shift+g   (popup 90%)
+#    lazydocker        = prefix + Alt+d     (popup 90%; shift+d colide
+#                                              com close_workspace)
+#
+#  Tabela de atalhos completa: prefix + ?
+# =====================================================================
+
+[keys]
+# Prefixo herdado do tmux
+prefix = "ctrl+a"
+
+# Recarregar config — usa o default do herdr (prefix + shift + r) para
+# liberar prefix + r para o resize_mode
+# reload_config = "prefix+shift+r"
+
+# --- Splits (iguais ao tmux: prefix + | e prefix + -) ---
+split_vertical   = ["prefix+|", "prefix+\\"]
+split_horizontal = ["prefix+-", "prefix+_"]
+
+# --- Navegar entre paineis COM prefixo (estilo vim) ---
+focus_pane_left  = ["prefix+h", "alt+left"]
+focus_pane_down  = ["prefix+j", "alt+down"]
+focus_pane_up    = ["prefix+k", "alt+up"]
+focus_pane_right = ["prefix+l", "alt+right"]
+
+# Navigate-mode (hjkl puro, igual ao vim)
+navigate_pane_left  = "h"
+navigate_pane_down  = "j"
+navigate_pane_up    = "k"
+navigate_pane_right = "l"
+
+# --- Swap de paineis (prefix + Shift+HJKL, igual ao tmux) ---
+swap_pane_left  = "prefix+shift+h"
+swap_pane_down  = "prefix+shift+j"
+swap_pane_up    = "prefix+shift+k"
+swap_pane_right = "prefix+shift+l"
+
+# --- Zoom no painel atual (tela cheia temporaria): prefix + z ---
+zoom = "prefix+z"
+
+# --- Modo resize (prefix + r entra, hjkl redimensiona, Esc sai) ---
+resize_mode = "prefix+r"
+
+# --- Tabs (janelas no tmux) ---
+new_tab      = "prefix+c"
+next_tab     = "shift+right"     # sem prefixo (igual ao tmux: Shift+Right)
+previous_tab = "shift+left"      # sem prefixo (igual ao tmux: Shift+Left)
+rename_tab   = "prefix+shift+t"
+close_tab    = "prefix+shift+x"
+switch_tab   = "prefix+1..9"     # pulo direto p/ tab 1-9
+
+# --- Workspaces (sessoes no tmux) ---
+new_workspace    = "prefix+shift+n"    # nova sessao rapida (sem nome)
+rename_workspace = "prefix+shift+w"    # rename-session
+close_workspace  = "prefix+shift+d"    # kill-session
+goto             = "prefix+g"          # switch-client (picker)
+# Trocar workspaces sem prefixo (igual ao Ctrl+Up/Down do tmux)
+previous_workspace = "ctrl+up"
+next_workspace     = "ctrl+down"
+
+# =====================================================================
+#  Popups (lazygit / lazydocker — mesmo padrao do antigo tmux.conf)
+#  O popup roda com PATH completo para garantir que os binarios
+#  sejam encontrados mesmo se o herdr foi iniciado antes do
+#  brew shellenv carregar.
+#
+#  Atalhos:
+#    prefix + shift + g  ->  lazygit  (popup 90%)
+#    prefix + alt + d    ->  lazydocker (popup 90%; prefix+shift+d colide
+#                            com close_workspace, prefix+shift+[hjkl]
+#                            colidem com swap_pane_*)
+# =====================================================================
+
+[[keys.command]]
+key = "prefix+shift+g"
+type = "popup"
+command = "PATH=$HOME/.asdf/shims:$HOME/.bun/bin:$HOME/.opencode/bin:$HOME/.npm-global/bin:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/bin:/usr/bin:/bin lazygit"
+description = "lazygit (Source Control TUI)"
+width = "90%"
+height = "90%"
+
+[[keys.command]]
+key = "prefix+alt+d"
+type = "popup"
+command = "PATH=$HOME/.asdf/shims:$HOME/.bun/bin:$HOME/.opencode/bin:$HOME/.npm-global/bin:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/bin:/usr/bin:/bin lazydocker"
+description = "lazydocker (containers/volumes TUI)"
+width = "90%"
+height = "90%"
+
+# =====================================================================
+#  Tema — overrides de cor em cima do tema base "catppuccin"
+#  (so os tokens que o herdr aceita: panel_bg, accent, red, green)
+# =====================================================================
+[theme]
+name         = "catppuccin"
+auto_switch  = false
+
+[theme.custom]
+panel_bg = "#181636"   # fundo (igual barra do antigo .tmux.conf)
+accent   = "#eebf37"   # dourado (borda ativa / aba ativa)
+red      = "#fc5e59"   # behind
+green    = "#9dff6e"   # git clean / +staged
+
+# =====================================================================
+#  Terminal
+# =====================================================================
+[terminal]
+default_shell = "zsh"
+shell_mode    = "auto"
+new_cwd       = "follow"        # nova janela/painel herda o diretorio atual
+
+# =====================================================================
+#  Sidebar (Claude Code usage + git)
+#  Habilita a sidebar nativa do herdr com:
+#    - icone + workspace por aba
+#    - branch e status do git
+#    - uso do Claude Code (5h/7d/ctx) — token $claude_usage,
+#      fornecido pelo plugin herdr-claude-usage
+#      (instalado por step_herdr_claude_usage; deve estar
+#      carregado com `herdr plugin action invoke start --plugin
+#      unit1.claude-usage` na primeira vez).
+#  Sem isso, o herdr NAO mostra uso do Claude — nativamente ele só
+#  detecta o estado (working/blocked/idle/done).
+# =====================================================================
+
+[ui.sidebar.agents]
+row_gap = 0
+rows = [
+  ["state_icon", "workspace", "tab"],
+  ["agent", "state_text"],
+]
+
+[ui.sidebar.spaces]
+row_gap = 0
+rows = [
+  ["state_icon", "workspace"],
+  ["branch", "git_status"],
+  ["$claude_usage"],
+]
+
+# =====================================================================
+#  Sessoes — restauracao automatica
+#  (substitui o tmux-resurrect + tmux-continuum: pane_history replay
+#   reproduz o conteudo dos paineis; resume_agents_on_restore retoma
+#   as conversas do Claude Code/Codex/etc apos restart do servidor)
+# =====================================================================
+[session]
+resume_agents_on_restore = true
+
+[experimental]
+pane_history = true

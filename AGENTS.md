@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Operational notes for agents working in this dotfiles repository. This is a
-personal dotfiles repo (zsh + kitty + tmux + Claude Code), not a typical
+personal dotfiles repo (zsh + kitty + herdr + Claude Code), not a typical
 software project — there is no `package.json`, no test suite, and no build
 step. The "commands" are bash steps inside `install.sh`, and the "source
 files" are shell scripts and config snippets.
@@ -16,10 +16,6 @@ files" are shell scripts and config snippets.
 │   ├── .zshrc                 # main zsh config (oh-my-zsh, p10k, aliases, PATH)
 │   ├── .fzf.zsh               # fzf shell integration
 │   ├── .p10k.zsh              # Powerlevel10k prompt config (large, auto-generated)
-│   ├── .tmux.conf             # tmux config (prefix Ctrl-a, status bar styling, TPM)
-│   ├── .tmux-statusline.zsh   # shell hook → writes @env_info to tmux status bar
-│   ├── .tmux-claude-usage.sh  # reads ~/.cache/claude/usage.json, renders Claude usage
-│   ├── .tmux-minimax-usage.sh # fetches MiniMax Coding Plan quota, renders usage
 │   ├── .claude-statusline.sh  # Claude Code statusLine → writes the cache file above
 │   └── .tool-versions         # asdf-managed versions (single source of truth)
 ├── config/kitty/              # → ~/.config/kitty/
@@ -27,8 +23,10 @@ files" are shell scripts and config snippets.
 │   ├── current-theme.conf     # kitty rewrites this on theme switch
 │   ├── dark-theme.auto.conf
 │   └── 3.png                  # background image (versioned, symlinked)
+├── config/herdr/              # → ~/.config/herdr/   (substituto do tmux)
+│   └── config.toml            # prefix Ctrl-a, splits |/-, hjkl, popups lazygit/lazydocker
 ├── claude/hooks/              # → ~/.claude/hooks/
-│   └── claude-notify.sh       # Stop/Notification → notify-send + tmux bell
+│   └── claude-notify.sh       # Stop/Notification → notify-send + BEL
 └── bin/_awspp                 # reference copy of the awsp helper (real one ships in /usr/local/bin)
 ```
 
@@ -46,14 +44,11 @@ There is no build, lint, or test step. The only top-level entry point is
 SKIP_PKGS=1 ./install.sh # skip the apt/pacman step but keep going
 ```
 
-`./install.sh` installs the TPM plugins non-interactively: in `all` mode
-`step_link` runs **before** `step_tmux`, so `~/.tmux.conf` already exists when
-TPM parses the `@plugin` list (without it, TPM installs zero plugins — this is
-why the ordering matters). `step_tmux` then verifies `tmux-resurrect` and
-`tmux-continuum` are present. If a plugin is still missing, run **`prefix + I`**
-(prefix = `Ctrl-a`) inside tmux to finish.
-
-After editing `~/.tmux.conf`, reload it inside tmux with **`prefix + r`**.
+`./install.sh` installs `herdr` via its official curl script in `step_herdr`
+(runs after `step_link` so `~/.config/herdr/` exists). On first launch the
+herdr server picks up `config.toml` from the symlink automatically; on
+subsequent edits, reload inside herdr with **`prefix + shift + r`** (the
+default), or run `herdr server reload-config` from any pane.
 
 After editing `claude/hooks/claude-notify.sh`, run `/hooks` inside Claude Code
 (or restart the Claude session) to reload the merged `settings.json`.
@@ -86,8 +81,7 @@ safe.
   `/home/linuxbrew/.linuxbrew/bin/brew` vs `/opt/homebrew/bin/brew` vs
   `/usr/local/bin/brew`). Match the existing pattern when adding cross-OS
   detection.
-- Nerd Font icons are inlined as `$'<glyph>'` in zsh scripts and as
-  `\#<codepoint>` Powerline glyphs (`\ue0bc`, etc.) in `tmux.conf`. The
+- Nerd Font icons are inlined as `$'<glyph>'` in zsh scripts. The
   installed font is `FiraCode Nerd Font Mono`.
 
 ### Claude Code hooks
@@ -102,43 +96,35 @@ hooks.
 The hook itself (`claude/hooks/claude-notify.sh`):
 - Reads event JSON from stdin (may be empty).
 - Sends a `notify-send` desktop notification (requires `libnotify` / `libnotify-bin`).
-- Writes `\a` (BEL) to the **active tmux pane's tty** via
-  `tmux display-message -p '#{pane_tty}'`. This is what makes the bell cross
-  SSH and trigger kitty/Windows Terminal flashes.
+- Writes `\a` (BEL) to **`/dev/tty`** (the shell's own controlling tty —
+  which, inside a herdr pane, IS the pane's tty). This is what makes the
+  bell cross SSH and trigger kitty/Windows Terminal flashes.
 - Exits 0 always.
 
-### Tmux status bar data flow
+### Claude Code usage in the herdr sidebar
 
-Two files cooperate to display Claude usage in the tmux status bar:
+The sidebar (`prefix + w`) is **not** enabled by default. `config/herdr/config.toml`
+declares `[ui.sidebar.agents]` and `[ui.sidebar.spaces]` explicitly. The Spaces
+rows include `branch` and `git_status` natively, and the custom `$claude_usage`
+token — which renders the 5h/7d/ctx percentages from
+`~/.cache/claude/usage.json` (written by `~/.claude-statusline.sh`).
 
-1. `~/.claude-statusline.sh` — wired in by Claude Code itself as the
-   `statusLine` command. Receives event JSON on stdin, extracts
-   `rate_limits.five_hour` / `seven_day` / `context_window`, writes the
-   parsed snapshot to `~/.cache/claude/usage.json`, and prints the status
-   line string.
-2. `~/.tmux-claude-usage.sh` — sourced into the status-left string in
-   `tmux.conf`. It `pgrep -x claude` first (silent if Claude isn't running),
-   drops the segment when data is >5 min stale, and colors the 5h percentage
-   green/yellow/red at <70/<90/≥90.
-3. `~/.tmux-minimax-usage.sh` — same slot in `tmux.conf`, fetches the
-   Coding Plan quota directly from `https://api.minimax.io/v1/token_plan/remains`
-   with the user's Bearer key (env `MINIMAX_API_KEY`, or falls back to
-   the MiniMax key in `~/.local/share/crush/crush.json`). Uses the
-   `current_interval_remaining_percent` / `current_weekly_remaining_percent`
-   fields; caches to `~/.cache/minimax/usage.json` for 5 min. Silent when
-   no key is set or `MINIMAX_BAR=0`. (Note: the MiniMax API exposes the
-   remaining percent directly — no subtraction from "total" needed; the
-   `total`/`usage_count` fields are 0 for this plan tier and were a
-   red-herring from older docs.)
+The `$claude_usage` token is provided by the **herdr-claude-usage plugin**
+(`alejodelosrios/herdr-claude-usage`), installed by `install.sh`
+(`step_herdr_claude_usage`). It is **not** a native herdr feature; the plugin
+runs a Python monitor that reads the same `usage.json` and posts metadata
+into the focused workspace. **First-time setup inside an active herdr session:**
 
-`~/.tmux-statusline.zsh` is a zsh `precmd` hook (runs in the background via
-`&!`) that pushes git/k8s/tf/aws/gcloud/python/node info into the tmux
-`@env_info` option — that's what feeds the right side of the bar. The git
-section uses `git status -sbunormal` (porcelain, no submodules, untracked
-included) and parses: branch name, `↑N` (ahead) / `↓N` (behind) from the
-`[ahead N, behind M]` line, and dirty counts as `+N` (staged) / `!N`
-(unstaged) / `?N` (untracked). It runs in `&!` so the git status overhead
-(~2ms) doesn't block the prompt.
+```sh
+herdr plugin action invoke start --plugin unit1.claude-usage
+```
+
+After the first `start`, the monitor hooks into `workspace.created` and
+`pane.created` events automatically — no need to re-run it on every restart.
+
+The `~/.tmux-claude-usage.sh` and `~/.tmux-minimax-usage.sh` files were
+removed in the herdr migration; usage now lives in the herdr sidebar
+itself (`prefix + w`) instead of a top statusline.
 
 ### asdf
 
@@ -173,23 +159,24 @@ plugin asdf.
   the global `npm install -g awsp` to drop it in `/usr/local/bin`. The copy
   in `bin/_awspp` is reference-only (note the typo "Usaado somentee…" in
   `~/.zshrc` line 40 is in the original file, not a clue).
-- **Background in tmux status update**: `_tmux_refresh_env` runs `&!` so it
-  doesn't block the prompt, but it also calls `tmux refresh-client -S` which
-  redraws the bar.
-- **The `.zshrc` tmux auto-attach has exceptions.** It attaches to session
-  `main` only in interactive shells that are NOT inside another tmux (`$TMUX`),
-  NOT the VS Code integrated terminal (`$TERM_PROGRAM`), and NOT a dropdown
-  terminal. `_is_dropdown_terminal` checks `GUAKE_TAB_UUID` first, then walks
-  the `/proc` parent chain for `guake`/`yakuake`. The env var is the reliable
-  signal for Guake — its tmux server is often reparented to systemd, so the
-  process walk alone would miss it; the /proc walk covers Yakuake's first
-  shell (before any tmux exists).
-- **Session persistence is on by default** via `tmux-resurrect` +
-  `tmux-continuum` (`.tmux.conf`): `@continuum-restore on` auto-restores on
-  server start, `@continuum-save-interval 15` autosaves every 15 min. Saves
-  live under `~/.local/share/tmux/resurrect/`. This interacts with the .zshrc
-  auto-attach: the first shell after a reboot runs `tmux new -s main`, which
-  boots the server and triggers continuum's restore of the other sessions.
+- **The `.zshrc` herdr auto-attach has exceptions.** It executes
+  `herdr --session main` only in interactive shells that are NOT inside
+  another herdr (`$HERDR_ENV`), NOT the VS Code integrated terminal
+  (`$TERM_PROGRAM`), and NOT a dropdown terminal. `_is_dropdown_terminal`
+  checks `GUAKE_TAB_UUID` first, then walks the `/proc` parent chain for
+  `guake`/`yakuake`. The env var is the reliable signal for Guake — its
+  terminal process is often reparented to systemd, so the process walk alone
+  would miss it; the /proc walk covers Yakuake's first shell (before any
+  herdr exists).
+- **Session persistence is on by default** via herdr's built-in
+  `[session] resume_agents_on_restore = true` (Claude Code/Codex/etc
+  resume their conversations after server restart) and
+  `[experimental] pane_history = true` (replays recent terminal output
+  after a full restart). The `config/herdr/config.toml` keeps these on;
+  no separate plugin manager is required (herdr is a single Rust binary).
+  This interacts with the .zshrc auto-attach: the first shell after a
+  reboot runs `herdr --session main`, which boots the server and resumes
+  any saved agents.
 - **1Password SSH agent** (`SSH_AUTH_SOCK=~/.1password/agent.sock` in `.zshrc`)
   is referenced but the agent is NOT installed by `install.sh` — README
   explicitly calls this out as a manual step.
@@ -211,7 +198,8 @@ plugin asdf.
 
 1. Make changes to files inside `home/`, `config/`, `claude/`, or `bin/`.
 2. Run `./install.sh link` to refresh the symlinks + re-merge Claude hooks.
-3. Inside tmux: `prefix + r` to reload `tmux.conf`.
+3. Inside herdr: `prefix + shift + r` to reload `config.toml`
+   (or run `herdr server reload-config` from any pane).
 4. Open a new shell (or `exec zsh`) to pick up `.zshrc` / `.zshenv` changes.
 5. For Claude Code: `/hooks` → reload, or restart the Claude session.
 

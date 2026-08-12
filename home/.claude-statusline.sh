@@ -3,7 +3,7 @@
 #  statusLine do Claude Code.
 #  - Recebe um JSON via stdin (dados da sessao do Claude Code).
 #  - Extrai o uso de contexto (janela atual) e grava num arquivo
-#    para a barra do tmux ler (~/.cache/claude/usage.json).
+#    para a sidebar do herdr ler (~/.cache/claude/usage.json).
 #  - Tambem imprime uma linha de status para o proprio Claude Code.
 #  - Salva o JSON cru em ~/.cache/claude/statusline-input.json para
 #    validacao/depuracao da estrutura.
@@ -37,10 +37,10 @@ IFS=$'\t' read -r model h5 h5r d7 d7r ctx < <(
     ] | @tsv' 2>/dev/null
 )
 
-# 3) grava os dados p/ o tmux (JSON simples).
+# 3) grava os dados p/ consumo externo (sidebar do herdr).
 #    Mantemos os nomes `five_hour_pct`/`seven_day_pct` por retro-compat
-#    com ~/.tmux-claude-usage.sh, mas no schema >=2.1 esses dois ficam
-#    vazios; o campo principal para a barra passa a ser `context_pct`.
+#    com integracoes antigas; no schema >=2.1 esses dois ficam vazios;
+#    o campo principal passa a ser `context_pct`.
 jq -n \
   --arg h5 "${h5:-}" --arg h5r "${h5r:-}" \
   --arg d7 "${d7:-}" --arg d7r "${d7r:-}" \

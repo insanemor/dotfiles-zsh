@@ -233,42 +233,41 @@ step_font() {
 }
 
 # =====================================================================
-#  9) TPM + plugins do tmux
+#  9) herdr — substituto do tmux focado em AI coding agents
+#      https://herdr.dev  (escrito em Rust, TUI agent-aware)
+#      Instala via script oficial e cria ~/.config/herdr/ se faltar
+#      (o symlink do config entra no step_link).
 # =====================================================================
-step_tmux() {
-  local tpm="$HOME/.tmux/plugins/tpm"
-  local plugins_dir="$HOME/.tmux/plugins"
-
-  # 1) TPM (gerenciador de plugins)
-  if [ -d "$tpm" ]; then ok "TPM já instalado"; else
-    log "Instalando TPM…"
-    git clone --depth 1 https://github.com/tmux-plugins/tpm "$tpm" || warn "falha no TPM"
-  fi
-  { [ -d "$tpm" ] && have tmux; } || { warn "TPM ou tmux ausente; pulando plugins do tmux"; return; }
-
-  # 2) O TPM descobre os @plugin lendo o ~/.tmux.conf (ou o caminho XDG).
-  #    Sem esse arquivo ele instala ZERO plugins — por isso o step_link
-  #    precisa rodar antes (no modo 'all' a ordem ja garante isso).
-  local conf="$HOME/.tmux.conf"
-  [ -f "${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf" ] && conf="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
-  if [ ! -f "$conf" ]; then
-    warn "~/.tmux.conf ainda nao existe; rode './install.sh link' antes de instalar os plugins"
-    return
-  fi
-
-  # 3) Instala/atualiza os plugins declarados no tmux.conf (resurrect, continuum, …).
-  #    Nao precisa do tmux rodando: o install_plugins parseia o proprio .tmux.conf.
-  log "Instalando plugins do tmux (resurrect/continuum/…)…"
-  "$tpm/bin/install_plugins" >/dev/null 2>&1 || true
-
-  # 4) Verifica o que o resurrect precisa: resurrect + continuum clonados.
-  local missing=""
-  [ -d "$plugins_dir/tmux-resurrect" ] || missing="$missing tmux-resurrect"
-  [ -d "$plugins_dir/tmux-continuum" ] || missing="$missing tmux-continuum"
-  if [ -n "$missing" ]; then
-    warn "plugins faltando:$missing — abra o tmux e finalize com: prefixo (Ctrl-a) + I"
+step_herdr() {
+  if have herdr || [ -x "$HOME/.local/bin/herdr" ]; then
+    ok "herdr já instalado"
   else
-    ok "plugins do tmux prontos (resurrect + continuum instalados)"
+    log "Instalando herdr…"
+    curl -fsSL https://herdr.dev/install.sh | sh \
+      && ok "herdr instalado em ~/.local/bin" \
+      || warn "falha ao instalar herdr (rode manualmente: https://herdr.dev/docs/install/)"
+  fi
+  have herdr || { warn "herdr indisponível; pule esta etapa e instale depois"; return; }
+  # Garante o diretorio de config para o symlink do step_link
+  mkdir -p "$HOME/.config/herdr"
+}
+
+# =====================================================================
+#  9b) Plugin herdr-claude-usage
+#      Fornece o token `$claude_usage` (5h/7d/ctx) que aparece na
+#      sidebar (vide [ui.sidebar.spaces] no config.toml).
+#      Idempotente: pula se já estiver instalado.
+# =====================================================================
+step_herdr_claude_usage() {
+  have herdr || { warn "herdr indisponível; pulando plugin claude-usage"; return; }
+  if herdr plugin list 2>/dev/null | grep -q "claude-usage"; then
+    ok "plugin herdr-claude-usage já instalado"
+  else
+    log "Instalando plugin herdr-claude-usage…"
+    # `--yes` é obrigatório em ambientes sem TTY (CI, install.sh)
+    herdr plugin install --yes alejodelosrios/herdr-claude-usage \
+      && ok "plugin herdr-claude-usage instalado (ative com: herdr plugin action invoke start --plugin unit1.claude-usage)" \
+      || warn "falha ao instalar o plugin (rode manualmente: herdr plugin install --yes alejodelosrios/herdr-claude-usage)"
   fi
 }
 
@@ -292,6 +291,9 @@ step_link() {
   link "$DOTFILES_DIR/config/nvim"                       "$HOME/.config/nvim"
   # ~/.config/lazygit (tema + layout focado)
   link "$DOTFILES_DIR/config/lazygit/config.yml"         "$HOME/.config/lazygit/config.yml"
+  # ~/.config/herdr (atalhos + tema — substituto do .tmux.conf)
+  mkdir -p "$HOME/.config/herdr"
+  link "$DOTFILES_DIR/config/herdr/config.toml"          "$HOME/.config/herdr/config.toml"
   # ~/.claude/ (hook de notificação)
   link "$DOTFILES_DIR/claude/hooks/claude-notify.sh"     "$HOME/.claude/hooks/claude-notify.sh"
 }
@@ -301,9 +303,9 @@ step_link() {
 #      Garante os hooks Stop/Notification E o statusLine em
 #      ~/.claude/settings.json sem destruir o restante das configs
 #      pessoais. O statusLine alimenta ~/.cache/claude/usage.json,
-#      que e lido por ~/.tmux-claude-usage.sh para mostrar o uso
-#      na barra do tmux em QUALQUER sessao onde o `claude` rode
-#      (e nao apenas quando invocado via Crush).
+#      que eh lido pelo plugin herdr-claude-usage (instalado por
+#      step_herdr_claude_usage) e exibido como token $claude_usage
+#      na sidebar do herdr (vide [ui.sidebar.spaces] no config.toml).
 # =====================================================================
 step_claude_hooks() {
   have jq || { warn "jq ausente, pulando hooks do Claude"; return; }
@@ -338,8 +340,8 @@ step_claude_hooks() {
 # =====================================================================
 main() {
   case "${1:-all}" in
-    link)  step_link; step_claude_hooks ;;
-    tools) step_omz; step_fzf; step_atuin; step_brew; step_asdf; step_npm_tools; step_extras; step_font; step_tmux ;;
+    link)  step_link; step_claude_hooks; step_herdr_claude_usage ;;
+    tools) step_omz; step_fzf; step_atuin; step_brew; step_asdf; step_npm_tools; step_extras; step_font; step_herdr; step_herdr_claude_usage ;;
     all)
       step_pkgs
       step_omz
@@ -351,7 +353,8 @@ main() {
       step_extras
       step_font
       step_link
-      step_tmux
+      step_herdr
+      step_herdr_claude_usage
       step_claude_hooks
       ;;
     *) echo "uso: $0 [all|link|tools]"; exit 1 ;;
@@ -360,10 +363,16 @@ main() {
   log "Concluído. Abra um novo terminal (zsh)."
   [ -d "$BACKUP_DIR" ] && warn "arquivos substituídos foram salvos em: $BACKUP_DIR"
   echo "Notas:"
-  echo "  • Plugins do tmux (resurrect/continuum/…) já instalados. Se algum faltar,"
-  echo "    abra o tmux e finalize com: prefixo (Ctrl-a) + I"
-  echo "  • Sessões do tmux salvam/restauram sozinhas (continuum) e sobrevivem a reboot."
-  echo "    Terminais dropdown (Guake/Yakuake) abrem o zsh puro, sem subir o tmux."
+  echo "  • herdr instalado como terminal multiplexer padrão. Para iniciar: herdr."
+  echo "    O config fica em ~/.config/herdr/config.toml (link deste repo)."
+  echo "    Dentro do herdr, prefix + ? lista todos os atalhos ativos."
+  echo "    Sidebar: prefix + w mostra agentes + branch/git + uso do Claude (5h/7d/ctx)."
+  echo "    Plugin de uso do Claude instalado por herdr-claude-usage; na primeira"
+  echo "    vez é preciso ativar dentro do herdr: herdr plugin action invoke start"
+  echo "    --plugin unit1.claude-usage."
+  echo "  • Sessoes do herdr sobrevivem a reboot via [session] resume_agents_on_restore"
+  echo "    e o replay do historico via [experimental] pane_history."
+  echo "  • Terminais dropdown (Guake/Yakuake) abrem o zsh puro, sem subir o herdr."
   echo "  • O kitty.conf referencia uma imagem de fundo (~/Pictures/3.png) — ajuste se faltar."
   echo "  • Notificações do Claude: rode /hooks no Claude Code (ou reinicie) p/ recarregar."
   echo "  • 1Password (agente SSH em ~/.1password/agent.sock) deve ser instalado à parte."

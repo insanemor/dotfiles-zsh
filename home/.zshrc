@@ -123,10 +123,10 @@ export PATH="$HOME/.bun/bin:$PATH"
 
 ##########################################################################################################################################
 
-# tmux: inicia/anexa automaticamente a sessao "main" em terminais interativos.
-# Guards: so em shell interativo, fora de outro tmux e fora do terminal do VSCode.
-# Excecao: terminais dropdown (Guake/Yakuake) abrem o zsh puro, SEM tmux.
-# Para DESATIVAR, basta comentar este bloco.
+# herdr (substituto do tmux): inicia/anexa automaticamente a sessao "main"
+# em terminais interativos. Guards: so em shell interativo, fora de outro
+# herdr, fora do terminal do VSCode. Excecao: terminais dropdown (Guake/
+# Yakuake) abrem o zsh puro, SEM herdr. Para DESATIVAR, basta comentar este bloco.
 
 # Detecta se estamos rodando dentro de um terminal dropdown (Guake/Yakuake).
 # Atalho: o Guake exporta GUAKE_TAB_UUID em cada aba. Fallback robusto: sobe a
@@ -148,14 +148,17 @@ _is_dropdown_terminal() {
   return 1
 }
 
-if [[ -o interactive ]] && [[ -z "$TMUX" ]] && [[ "$TERM_PROGRAM" != "vscode" ]] \
-   && ! _is_dropdown_terminal && command -v tmux >/dev/null; then
-  tmux attach -t main 2>/dev/null || tmux new -s main
+if [[ -o interactive ]] && [[ -z "$HERDR_ENV" ]] && [[ "$TERM_PROGRAM" != "vscode" ]] \
+   && ! _is_dropdown_terminal && command -v herdr >/dev/null; then
+  # `herdr` sozinho ja faz launch ou attach a sessao default; com --session
+  # usamos uma sessao nomeada ("main") para ficar equivalente ao antigo
+  # `tmux attach -t main 2>/dev/null || tmux new -s main`. `exec` substitui
+  # o zsh pelo herdr para que siano herdr o processo "dono" da sessao.
+  exec herdr --session main
 fi
 
-# tmux: publica contexto (git/aws/kube/tf/gcloud/versoes) na barra superior
-# e expoe o nome da sessao pro prompt do p10k (segmento tmux_session).
-if [[ -n "$TMUX" ]]; then
-  export _P9K_TMUX_SESSION=$(tmux display-message -p '#S' 2>/dev/null)
-  [[ -f ~/.tmux-statusline.zsh ]] && source ~/.tmux-statusline.zsh
+# herdr: expoe o nome do workspace para o prompt do p10k (segmento tmux_session
+# ja existia — o p10k aceita o mesmo env var, entao mantemos o nome).
+if [[ -n "$HERDR_ENV" ]]; then
+  export _P9K_TMUX_SESSION=${HERDR_SESSION:-main}
 fi

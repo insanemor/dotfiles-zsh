@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # =====================================================================
 #  Notificação do Claude Code: desktop (notify-send) + bell no terminal.
-#  O bell é escrito no tty do painel ATIVO do tmux, então atravessa o
-#  tmux e o SSH, tocando/piscando tanto no kitty (local) quanto no
-#  Windows Terminal (remoto).
+#  O bell é escrito no /dev/tty do shell ATUAL, que dentro do herdr
+#  corresponde ao tty da pane em foco (a mesma onde o claude roda).
+#  Isso faz o bell atravessar o herdr e o SSH, tocando/piscando tanto
+#  no kitty (local) quanto no Windows Terminal (remoto).
 #
 #  Uso (no hook do settings.json):
 #    claude-notify.sh stop          # quando o Claude termina
@@ -25,8 +26,11 @@ case "$kind" in
     ;;
 esac
 
-# Bell que atravessa o tmux: escreve no tty do painel ativo.
-tty="$(tmux display-message -p '#{pane_tty}' 2>/dev/null)"
-[ -n "$tty" ] && printf '\a' > "$tty" 2>/dev/null
+# Bell no tty do shell atual — dentro do herdr isso é o tty da pane onde
+# o claude esta rodando (o hook herda o mesmo /dev/tty do shell).
+# [ -t 1 ] garante que NAO escrevemos em redirecionamentos (cron, pipes, etc.)
+if [ -t 1 ]; then
+  printf '\a' > /dev/tty 2>/dev/null
+fi
 
 exit 0
