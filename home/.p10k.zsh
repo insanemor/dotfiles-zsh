@@ -34,6 +34,7 @@
     # =========================[ Line #1 ]=========================
     tmux_session          # nome da sessao tmux (custom)
     dir                     # current directory
+    vcs                     # git status (antes ficava na barra do tmux)
     # =========================[ Line #2 ]=========================
     newline                 # \n
     # prompt_char           # prompt symbol
@@ -47,13 +48,20 @@
     status                  # exit code of the last command
     command_execution_time  # duration of the last command
     background_jobs         # presence of background jobs
+    # contexto que antes ia para a barra do tmux (@env_info)
+    kubecontext             # current kubernetes context
+    terraform               # terraform workspace
+    aws                     # aws profile
+    gcloud                  # google cloud project
+    virtualenv              # python virtual environment
+    node_version            # node.js version (so em projeto node)
   )
 
   # Defines character set used by powerlevel10k. It's best to let `p10k configure` set it for you.
   #typeset -g POWERLEVEL9K_MODE=powerline
   # --- Segmento custom: nome da sessao tmux atual ---
   function prompt_tmux_session() {
-    [[ -n $TMUX ]] || return
+    [[ -n $TMUX || -n $HERDR_ENV ]] || return
     local s=$_P9K_TMUX_SESSION
     [[ -n $s ]] && p10k segment -f 178 -t "[$s]"
   }
