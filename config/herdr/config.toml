@@ -67,8 +67,8 @@ resize_mode = "prefix+r"
 
 # --- Tabs (janelas no tmux) ---
 new_tab      = "prefix+c"
-next_tab     = ["shift+right", "prefix+right"]  # Shift+Right (igual ao tmux) ou prefix+Right
-previous_tab = ["shift+left", "prefix+left"]    # Shift+Left (igual ao tmux) ou prefix+Left
+next_tab     = "ctrl+right"      # sem prefixo
+previous_tab = "ctrl+left"       # sem prefixo
 rename_tab   = "prefix+shift+t"
 close_tab    = "prefix+shift+x"
 switch_tab   = "prefix+1..9"     # pulo direto p/ tab 1-9
@@ -78,9 +78,9 @@ new_workspace    = "prefix+shift+n"    # nova sessao rapida (sem nome)
 rename_workspace = "prefix+shift+w"    # rename-session
 close_workspace  = "prefix+shift+d"    # kill-session
 goto             = "prefix+g"          # switch-client (picker)
-# Trocar workspaces: Ctrl+Up/Down (igual ao tmux) ou prefix+Up/Down
-previous_workspace = ["ctrl+up", "prefix+up"]
-next_workspace     = ["ctrl+down", "prefix+down"]
+# Trocar workspaces sem prefixo: Ctrl+Up/Down
+previous_workspace = "ctrl+up"
+next_workspace     = "ctrl+down"
 
 # =====================================================================
 #  Popups (lazygit / lazydocker — mesmo padrao do antigo tmux.conf)
