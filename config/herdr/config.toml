@@ -1,3 +1,4 @@
+onboarding = false
 # =====================================================================
 #  ~/.config/herdr/config.toml
 #
@@ -5,7 +6,7 @@
 #  Reproduz os mesmos atalhos do antigo ~/.tmux.conf para nao quebrar
 #  a memoria muscular:
 #
-#    prefix            = Ctrl-b                  (era Ctrl-a no tmux)
+#    prefix            = Ctrl-a                  (igual ao tmux)
 #    split vertical    = prefix + |              (tmux: prefix + |)
 #    split horizontal  = prefix + -              (tmux: prefix + -)
 #    navegar paineis   = Alt + setas (sem prefixo) + prefix + hjkl
@@ -30,8 +31,8 @@
 # =====================================================================
 
 [keys]
-# Prefixo (Ctrl-b; o tmux usava Ctrl-a)
-prefix = "ctrl+b"
+# Prefixo (Ctrl-a, igual ao tmux)
+prefix = "ctrl+a"
 
 # Recarregar config — usa o default do herdr (prefix + shift + r) para
 # liberar prefix + r para o resize_mode

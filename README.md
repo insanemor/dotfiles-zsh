@@ -22,7 +22,7 @@ o ambiente do zero. Suporta **Ubuntu/Debian** (apt) e **Arch** (pacman) — o
 │   │   ├── dark-theme.auto.conf
 │   │   └── 3.png              # imagem de fundo (versionada junto da config)
 │   ├── herdr/                 # vai para ~/.config/herdr/   (substituto do tmux)
-│   │   └── config.toml        # prefix Ctrl-b, splits |/-, hjkl, popups lazygit/lazydocker
+│   │   └── config.toml        # prefix Ctrl-a, splits |/-, hjkl, popups lazygit/lazydocker
 │   ├── nvim/                  # vai para ~/.config/nvim/ (init.lua, lua/, lazy-lock.json)
 │   └── lazygit/
 │       └── config.yml         # tema (combina com o kitty) + layout focado
@@ -96,7 +96,7 @@ reproduz os atalhos do antigo `.tmux.conf`:
 
 | Ação                            | Atalho            | Equivalente no tmux |
 |---------------------------------|-------------------|---------------------|
-| Prefixo                         | `Ctrl-b`          | `Ctrl-a`            |
+| Prefixo                         | `Ctrl-a`          | `Ctrl-a`            |
 | Split vertical                  | `prefix + \|`     | `prefix + \|`       |
 | Split horizontal                | `prefix + -`      | `prefix + -`        |
 | Navegar entre paineis           | `Alt + setas` ou `prefix + h/j/k/l` | idem |

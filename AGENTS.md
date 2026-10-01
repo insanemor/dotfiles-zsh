@@ -24,7 +24,7 @@ files" are shell scripts and config snippets.
 │   ├── dark-theme.auto.conf
 │   └── 3.png                  # background image (versioned, symlinked)
 ├── config/herdr/              # → ~/.config/herdr/   (substituto do tmux)
-│   └── config.toml            # prefix Ctrl-b, splits |/-, hjkl, popups lazygit/lazydocker
+│   └── config.toml            # prefix Ctrl-a, splits |/-, hjkl, popups lazygit/lazydocker
 ├── claude/hooks/              # → ~/.claude/hooks/
 │   └── claude-notify.sh       # Stop/Notification → notify-send + BEL
 └── bin/_awspp                 # reference copy of the awsp helper (real one ships in /usr/local/bin)
