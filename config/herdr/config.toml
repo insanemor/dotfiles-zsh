@@ -5,7 +5,7 @@
 #  Reproduz os mesmos atalhos do antigo ~/.tmux.conf para nao quebrar
 #  a memoria muscular:
 #
-#    prefix            = Ctrl-a                  (era Ctrl-a no tmux)
+#    prefix            = Ctrl-b                  (era Ctrl-a no tmux)
 #    split vertical    = prefix + |              (tmux: prefix + |)
 #    split horizontal  = prefix + -              (tmux: prefix + -)
 #    navegar paineis   = Alt + setas (sem prefixo) + prefix + hjkl
@@ -30,8 +30,8 @@
 # =====================================================================
 
 [keys]
-# Prefixo herdado do tmux
-prefix = "ctrl+a"
+# Prefixo (Ctrl-b; o tmux usava Ctrl-a)
+prefix = "ctrl+b"
 
 # Recarregar config — usa o default do herdr (prefix + shift + r) para
 # liberar prefix + r para o resize_mode
@@ -67,8 +67,8 @@ resize_mode = "prefix+r"
 
 # --- Tabs (janelas no tmux) ---
 new_tab      = "prefix+c"
-next_tab     = "shift+right"     # sem prefixo (igual ao tmux: Shift+Right)
-previous_tab = "shift+left"      # sem prefixo (igual ao tmux: Shift+Left)
+next_tab     = ["shift+right", "prefix+right"]  # Shift+Right (igual ao tmux) ou prefix+Right
+previous_tab = ["shift+left", "prefix+left"]    # Shift+Left (igual ao tmux) ou prefix+Left
 rename_tab   = "prefix+shift+t"
 close_tab    = "prefix+shift+x"
 switch_tab   = "prefix+1..9"     # pulo direto p/ tab 1-9
@@ -78,9 +78,9 @@ new_workspace    = "prefix+shift+n"    # nova sessao rapida (sem nome)
 rename_workspace = "prefix+shift+w"    # rename-session
 close_workspace  = "prefix+shift+d"    # kill-session
 goto             = "prefix+g"          # switch-client (picker)
-# Trocar workspaces sem prefixo (igual ao Ctrl+Up/Down do tmux)
-previous_workspace = "ctrl+up"
-next_workspace     = "ctrl+down"
+# Trocar workspaces: Ctrl+Up/Down (igual ao tmux) ou prefix+Up/Down
+previous_workspace = ["ctrl+up", "prefix+up"]
+next_workspace     = ["ctrl+down", "prefix+down"]
 
 # =====================================================================
 #  Popups (lazygit / lazydocker — mesmo padrao do antigo tmux.conf)
