@@ -21,6 +21,7 @@ onboarding = false
 #    zoom painel       = prefix + z
 #    reload config     = prefix + Shift+r        (default do herdr)
 #    resize mode       = prefix + r              (hjkl redimensiona, Esc sai)
+#    resize painel     = prefix + Ctrl+setas
 #    trocar tabs       = Shift + Left/Right      (sem prefixo)
 #    trocar workspaces = Ctrl + Up/Down          (sem prefixo)
 #    lazygit           = prefix + Shift+g   (popup 90%)
@@ -65,6 +66,12 @@ zoom = "prefix+z"
 
 # --- Modo resize (prefix + r entra, hjkl redimensiona, Esc sai) ---
 resize_mode = "prefix+r"
+
+# --- Resize direto: prefix + Ctrl+setas (igual ao tmux) ---
+resize_pane_left  = "prefix+ctrl+left"
+resize_pane_down  = "prefix+ctrl+down"
+resize_pane_up    = "prefix+ctrl+up"
+resize_pane_right = "prefix+ctrl+right"
 
 # --- Tabs (janelas no tmux) ---
 new_tab      = "prefix+c"
