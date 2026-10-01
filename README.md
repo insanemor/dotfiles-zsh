@@ -56,11 +56,12 @@ arquivo existente em `~/.dotfiles-backup/<timestamp>/` antes de criar os symlink
 
 | Categoria        | Itens |
 |------------------|-------|
-| Pacotes do SO    | zsh, tmux, kitty, eza, openfortivpn, git, curl, jq, wl-clipboard, xclip, libnotify, fd, fontconfig, build-essential (via apt no Debian/Ubuntu ou pacman no Arch — nomes ajustados por distro) |
+| Pacotes do SO    | zsh, tmux, eza, openfortivpn, git, curl, jq, wl-clipboard, xclip, libnotify, fd, fontconfig, build-essential (via apt no Debian/Ubuntu ou pacman no Arch — nomes ajustados por distro) |
 | Shell            | Oh My Zsh, Powerlevel10k, zsh-autosuggestions, zsh-syntax-highlighting |
 | Ferramentas      | fzf, atuin, opencode, awsp |
 | Homebrew         | asdf, fd, lazygit, neovim, charmbracelet/tap/crush |
 | asdf (.tool-versions) | awscli, bun, gcloud, helm, k3d, k9s, kubectl, kubectx, nodejs, terraform, terragrunt, tf-summarize, velero |
+| kitty            | instalador oficial em `~/.local/kitty.app` (`step_kitty`), link em `~/.local/bin` e `.desktop` próprio — o pacote do Ubuntu (0.32) duplica Enter/Backspace dentro do herdr |
 | herdr            | binary único em ~/.local/bin (instalado via script oficial em `step_herdr`); config em `~/.config/herdr/config.toml` (symlink deste repo) |
 | nvim             | config completa (init.lua + lua/) + lazy-lock.json → ~/.config/nvim |
 | lazygit          | tema (laranja/roxo, combina com o kitty) + layout focado → ~/.config/lazygit |

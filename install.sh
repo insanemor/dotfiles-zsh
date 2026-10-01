@@ -61,7 +61,7 @@ step_pkgs() {
     log "Instalando pacotes de sistema (apt)…"
     sudo apt-get update -y
     sudo apt-get install -y \
-      zsh tmux kitty eza openfortivpn lazygit lazydocker \
+      zsh tmux eza openfortivpn lazygit lazydocker \
       git curl wget unzip jq \
       wl-clipboard xclip libnotify-bin \
       fd-find fontconfig build-essential procps file
@@ -69,7 +69,7 @@ step_pkgs() {
     log "Instalando pacotes de sistema (pacman)…"
     # -Syu evita partial upgrade (recomendação do Arch); --needed pula o que já existe
     sudo pacman -Syu --needed --noconfirm \
-      zsh tmux kitty eza openfortivpn lazygit lazydocker \
+      zsh tmux eza openfortivpn lazygit lazydocker \
       git curl wget unzip jq \
       wl-clipboard xclip libnotify \
       fd fontconfig base-devel procps-ng file
@@ -233,6 +233,32 @@ step_font() {
 }
 
 # =====================================================================
+#  8b) kitty — instalador oficial em ~/.local/kitty.app
+#      O pacote do Ubuntu (0.32.x) envia o "soltar" de Enter/Backspace
+#      como tecla nova quando o herdr liga o protocolo de teclado do
+#      kitty (Enter/Backspace duplicados). A versao oficial nao tem o bug.
+# =====================================================================
+step_kitty() {
+  if [ -x "$HOME/.local/kitty.app/bin/kitty" ]; then
+    ok "kitty já instalado ($("$HOME/.local/kitty.app/bin/kitty" --version | awk '{print $2}'))"
+  else
+    log "Instalando kitty (instalador oficial)…"
+    curl -fsSL https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n \
+      || { warn "falha ao instalar kitty"; return; }
+  fi
+  mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications"
+  ln -sf "$HOME/.local/kitty.app/bin/kitty" "$HOME/.local/kitty.app/bin/kitten" "$HOME/.local/bin/"
+  # .desktop apontando para o binario novo (sobrepoe o /usr/share/applications)
+  local d
+  for d in kitty.desktop kitty-open.desktop; do
+    sed -e "s|Icon=kitty|Icon=$HOME/.local/kitty.app/share/icons/hicolor/256x256/apps/kitty.png|g" \
+        -e "s|Exec=kitty|Exec=$HOME/.local/kitty.app/bin/kitty|g" \
+        "$HOME/.local/kitty.app/share/applications/$d" > "$HOME/.local/share/applications/$d"
+  done
+  ok "kitty linkado em ~/.local/bin e atalho .desktop atualizado"
+}
+
+# =====================================================================
 #  9) herdr — substituto do tmux focado em AI coding agents
 #      https://herdr.dev  (escrito em Rust, TUI agent-aware)
 #      Instala via script oficial e cria ~/.config/herdr/ se faltar
@@ -362,7 +388,7 @@ step_claude_hooks() {
 main() {
   case "${1:-all}" in
     link)  step_link; step_claude_hooks; step_herdr_claude_usage; step_herdr_git_status ;;
-    tools) step_omz; step_fzf; step_atuin; step_brew; step_asdf; step_npm_tools; step_extras; step_font; step_herdr; step_herdr_claude_usage; step_herdr_git_status ;;
+    tools) step_omz; step_fzf; step_atuin; step_brew; step_asdf; step_npm_tools; step_extras; step_font; step_kitty; step_herdr; step_herdr_claude_usage; step_herdr_git_status ;;
     all)
       step_pkgs
       step_omz
@@ -373,6 +399,7 @@ main() {
       step_npm_tools
       step_extras
       step_font
+      step_kitty
       step_link
       step_herdr
       step_herdr_claude_usage
